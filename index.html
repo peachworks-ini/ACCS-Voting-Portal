@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACCS Suggestion Voting Portal</title>
+  <style>
+    :root {
+      --aa-navy: #000080;
+      --aa-light-blue: #87ceeb;
+      --aa-red: #ff0000;
+      --aa-gray-bg: #e0e0e0;
+      --aa-border: #666666;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #000000;
+      font-size: 12px;
+    }
+
+    a {
+      color: #0000ee;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    button {
+      background-color: #d4d0c8;
+      border: 2px solid;
+      border-top-color: #ffffff;
+      border-left-color: #ffffff;
+      border-right-color: #404040;
+      border-bottom-color: #404040;
+      padding: 2px 8px;
+      color: #000;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    button:active {
+      border-top-color: #404040;
+      border-left-color: #404040;
+      border-right-color: #ffffff;
+      border-bottom-color: #ffffff;
+      padding: 3px 7px 1px 9px;
+    }
+
+    button:disabled {
+      color: #808080;
+      border-top-color: #ffffff;
+      border-left-color: #ffffff;
+      border-right-color: #808080;
+      border-bottom-color: #808080;
+      cursor: default;
+    }
+
+    input[type="text"], input[type="password"], textarea {
+      border: 2px solid;
+      border-top-color: #404040;
+      border-left-color: #404040;
+      border-right-color: #ffffff;
+      border-bottom-color: #ffffff;
+      background-color: #ffffff;
+      padding: 2px;
+      font-size: 12px;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-header {
+      background-color: #ffffff;
+      padding: 10px;
+      border-bottom: 2px solid var(--aa-navy);
+      display: flex;
+      align-items: center;
+    }
+
+    .top-header h1 {
+      color: var(--aa-navy);
+      font-size: 24px;
+      font-weight: bold;
+      font-style: italic;
+      letter-spacing: -1px;
+    }
+
+    .version-label {
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: bold;
+      font-style: normal;
+      letter-spacing: 0;
+      color: #555;
+      border: 1px solid #aaa;
+      padding: 3px 7px;
+      background: #f3f3f3;
+    }
+
+    .top-nav-bar {
+      background-color: var(--aa-navy);
+      color: #ffffff;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+    }
+
+    .top-nav-bar a {
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    .top-nav-bar a:hover {
+      text-decoration: underline;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+    }
+
+    .sidebar {
+      width: 180px;
+      background-color: var(--aa-navy);
+      color: #ffffff;
+      min-height: 100%;
+    }
+
+    .sidebar-item {
+      display: block;
+      padding: 6px 10px;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: bold;
+      border-bottom: 1px solid #333399;
+      cursor: pointer;
+    }
+
+    .sidebar-item:hover {
+      background-color: #333399;
+      text-decoration: underline;
+    }
+
+    .content-area {
+      flex: 1;
+      padding: 15px;
+    }
+
+    .view { 
+      display: none; 
+    }
+    
+    .view.active { 
+      display: block; 
+    }
+
+    #login-view {
+      background-image: linear-gradient(to bottom, #f0f0f0 0%, #ffffff 100%);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 80px;
+    }
+
+    .login-box-wrapper {
+      position: relative;
+      width: 450px;
+    }
+
+    .login-tab {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      background-color: #ffffff;
+      border: 1px solid var(--aa-navy);
+      border-bottom: none;
+      color: var(--aa-navy);
+      font-size: 16px;
+      font-weight: bold;
+      padding: 2px 15px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .login-box {
+      border: 1px solid var(--aa-navy);
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .login-header-bar {
+      background-color: var(--aa-navy);
+      color: #ffffff;
+      padding: 2px 5px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .login-header-bar a {
+      color: #ffffff;
+    }
+
+    .login-light-blue-bar {
+      background-color: var(--aa-light-blue);
+      height: 12px;
+      width: 100%;
+    }
+
+    .login-form-area {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .login-error {
+      color: var(--aa-red);
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+
+    .login-row {
+      display: flex;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .login-row label {
+      width: 100px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .login-row input {
+      width: 200px;
+    }
+
+    .login-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 15px;
+    }
+
+    .data-box {
+      border: 1px solid var(--aa-navy);
+      margin-bottom: 15px;
+    }
+
+    .data-box-header {
+      background-color: var(--aa-navy);
+      color: #ffffff;
+      padding: 4px 8px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .data-box-content {
+      padding: 10px;
+      background-color: #ffffff;
+    }
+
+    .meta-text {
+      color: #666666;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .status-badge {
+      font-weight: bold;
+      padding: 1px 4px;
+      border: 1px solid #000;
+    }
+    
+    .status-active { 
+      background-color: #ffff00; 
+      color: #000; 
+    }
+    
+    .status-passed { 
+      background-color: #008000; 
+      color: #fff; 
+    }
+    
+    .status-failed { 
+      background-color: #ff0000; 
+      color: #fff; 
+    }
+    
+    .status-vetoed { 
+      background-color: #808080; 
+      color: #fff; 
+    }
+
+    .vote-controls {
+      margin-top: 10px;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .history-table th, .history-table td {
+      border: 1px solid #999;
+      padding: 4px;
+      font-size: 11px;
+    }
+    
+    .history-table th {
+      background-color: #eeeeee;
+    }
+
+    .rigid-form-row {
+      margin-bottom: 10px;
+    }
+    
+    .rigid-form-row label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    
+    .rigid-form-row input[type="text"] {
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .rigid-form-row textarea {
+      width: 100%;
+      max-width: 600px;
+      height: 100px;
+    }
+
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .modal-window {
+      background: #ffffff;
+      border: 2px outset #ffffff;
+      width: 400px;
+    }
+    
+    .modal-header {
+      background: var(--aa-navy);
+      color: #ffffff;
+      padding: 3px 6px;
+      font-weight: bold;
+    }
+    
+    .modal-body {
+      padding: 15px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="login-view" class="view active">
+    <div class="top-header" style="width: 100%; justify-content: flex-start; margin-bottom: auto;">
+      <h1>ACCS Suggestion Voting Portal</h1>
+    </div>
+    
+    <div class="login-box-wrapper">
+      <div class="login-tab">System Access</div>
+      <div class="login-box">
+        <div class="login-header-bar">
+          <span>Login</span>
+        </div>
+        <div class="login-light-blue-bar"></div>
+        <div class="login-form-area">
+          <div class="login-error" id="loginError" style="display:none;"></div>
+          <p style="margin-bottom:15px; line-height:1.5;">
+            Sign in with Discord to access the ACCS Suggestion Voting Portal.
+            You must be a member of the ACCS Discord server.
+          </p>
+          <div class="login-actions" style="justify-content:center;">
+            <button id="discordLoginBtn" onclick="app.login()">Login with Discord</button>
+          </div>
+          <div id="minecraftRegistration" style="display:none; margin-top:20px;">
+            <hr style="margin-bottom:15px;">
+            <p style="font-weight:bold; margin-bottom:10px;">First-time registration</p>
+            <p style="margin-bottom:10px;">Enter your Minecraft username to finish creating your account.</p>
+            <div class="login-row">
+              <label for="registrationMc">Minecraft Username</label>
+              <input type="text" id="registrationMc" maxlength="16" placeholder="Minecraft username">
+            </div>
+            <div class="login-actions">
+              <button id="registerDiscordBtn" onclick="app.registerDiscord()">Complete Registration</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: auto; padding: 20px; font-size: 10px; color: #666;">
+      System intended for ACCS Community Members only. Unauthorized access is prohibited.
+    </div>
+  </div>
+
+  <div id="app-wrapper" class="wrapper" style="display: none;">
+    <div class="top-header">
+      <h1>ACCS Suggestion Voting Portal</h1>
+      <span class="version-label">v0.0.1</span>
+    </div>
+    <div class="top-nav-bar">
+      <span>Welcome, <span id="navUserDisplay">User</span> | </span>
+      <a onclick="app.logout()">Logout</a>
+    </div>
+    
+    <div class="main-container">
+      <div class="sidebar">
+        <div style="padding: 10px; color: #87ceeb; font-weight: bold;">Menu</div>
+        <a class="sidebar-item" onclick="app.navigate('home-view')">Home / Resolved</a>
+        <a class="sidebar-item" onclick="app.navigate('vote-view')">Vote on Suggestions</a>
+        <a class="sidebar-item" onclick="app.navigate('suggest-view')">Submit Suggestion</a>
+        <a class="sidebar-item" onclick="app.navigate('my-suggestions-view')">My Suggestions</a>
+        <div id="adminNavBtn" style="display:none;">
+          <div style="padding:10px 10px 6px;color:var(--aa-red);font-weight:bold;border-top:1px solid #aaa;margin-top:8px;">Admin Tools</div>
+          <a class="sidebar-item" style="padding-left:24px;" id="adminPendingNavBtn" onclick="app.navigate('admin-view')">↳ Pending Reviews</a>
+          <a class="sidebar-item" style="padding-left:24px;" id="adminReportsNavBtn" onclick="app.navigate('admin-reports-view')">↳ Reports (<span id="adminReportCount">0</span>)</a>
+          <a class="sidebar-item" style="padding-left:24px;" id="adminPostModerationNavBtn" onclick="app.navigate('admin-moderation-view')">↳ Post Moderation</a>
+          <a class="sidebar-item" style="padding-left:24px;" id="adminDeletionHistoryNavBtn" onclick="app.navigate('admin-deletion-history-view')">↳ Post Deletion History</a>
+        </div>
+      </div>
+
+      <div class="content-area">
+        
+        <div id="home-view" class="view">
+          <h2 style="color: var(--aa-navy); margin-bottom: 10px; border-bottom: 2px solid var(--aa-navy);">Home / Resolved</h2>
+          <h3 style="margin:14px 0 8px;color:var(--aa-navy);">Recent <span style="font-size:11px;font-weight:normal;color:#555;">— verdict issued within the last 7 days</span></h3>
+          <div id="recentResolvedFeed"></div>
+          <h3 style="margin:22px 0 8px;color:var(--aa-navy);border-top:1px solid #aaa;padding-top:12px;">Older <span style="font-size:11px;font-weight:normal;color:#555;">— verdict issued more than 7 days ago</span></h3>
+          <div id="olderResolvedFeed"></div>
+        </div>
+
+        <div id="vote-view" class="view">
+          <h2 style="color: var(--aa-navy); margin-bottom: 10px; border-bottom: 2px solid var(--aa-navy);">Active Suggestions</h2>
+          <div style="display:flex;align-items:center;gap:8px;margin:10px 0 12px;flex-wrap:wrap;">
+            <label for="suggestionSort" style="font-weight:bold;">Organize by:</label>
+            <select id="suggestionSort" onchange="app.setVoteSort(this.value)" style="padding:3px;">
+              <option value="latest">Latest post</option>
+              <option value="hottest">Hottest post</option>
+              <option value="oldest">Oldest post</option>
+            </select>
+          </div>
+          <div id="activeFeed"></div>
+        </div>
+
+        <div id="suggest-view" class="view">
+          <div class="data-box" style="max-width: 600px;">
+            <div class="data-box-header">
+              <span>Submit a New Suggestion</span>
+            </div>
+            <div class="data-box-content">
+              <p style="color: var(--aa-red); font-weight: bold; margin-bottom: 10px; display: none;" id="cooldownWarning">
+                Submission Cooldown Active (1 Hour). You cannot submit right now.
+              </p>
+              <div class="rigid-form-row">
+                <label>Suggestion Title:</label>
+                <input type="text" id="suggestTitle" maxlength="100">
+              </div>
+              <div class="rigid-form-row">
+                <label>Description/Details:</label>
+                <textarea id="suggestBody"></textarea>
+              </div>
+              <div>
+                <button id="submitSuggestBtn" onclick="app.submitSuggestion()">Submit Suggestion</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="my-suggestions-view" class="view">
+          <h2 style="color: var(--aa-navy); margin-bottom: 10px; border-bottom: 2px solid var(--aa-navy);">My Suggestion History</h2>
+          <div id="myFeed"></div>
+        </div>
+
+        <div id="admin-view" class="view">
+          <h2 style="color: var(--aa-red); margin-bottom: 10px; border-bottom: 2px solid var(--aa-red);">Admin Tools — Pending Reviews</h2>
+          <p style="margin:8px 0 12px;">Community-approved suggestions wait here for five distinct moderator votes. Each admin may cast one vote per suggestion. Notes are private to admins until the decision is finalized.</p>
+          <div id="adminFeed"></div>
+        </div>
+
+        <div id="admin-reports-view" class="view">
+          <h2 style="color: var(--aa-red); margin-bottom: 10px; border-bottom: 2px solid var(--aa-red);">Admin Tools — Reports</h2>
+          <p style="margin:8px 0 12px;">Reports submitted by community members. Each report includes the reporter, reason, timestamp, and the post reported.</p>
+          <div id="adminReportsFeed"><p>Loading reports…</p></div>
+        </div>
+
+        <div id="admin-deletion-history-view" class="view">
+          <h2 style="color: var(--aa-red); margin-bottom: 10px; border-bottom: 2px solid var(--aa-red);">Admin Tools — Post Deletion History</h2>
+          <p style="margin:8px 0 12px;">A permanent record of posts removed by an admin, including the original title, body, author, deletion reason, deleting admin, and timestamp.</p>
+          <div id="postDeletionHistoryFeed"><p>Loading deletion history…</p></div>
+        </div>
+
+        <div id="admin-moderation-view" class="view">
+          <h2 style="color: var(--aa-red); margin-bottom: 10px; border-bottom: 2px solid var(--aa-red);">Admin Tools — Post Moderation</h2>
+          <p style="margin:8px 0 12px;">Admins can immediately remove a post they determine violates server rules. Deletion is immediate, but a copy is preserved in Post Deletion History for accountability.</p>
+          <div id="postModerationFeed"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="msgModal">
+    <div class="modal-window">
+      <div class="modal-header" id="msgModalTitle">System Message</div>
+      <div class="modal-body">
+        <p id="msgModalText" style="margin-bottom:15px;"></p>
+        <div style="text-align:right;">
+          <button type="button" onclick="document.getElementById('msgModal').style.display='none'">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="editModal">
+    <div class="modal-window" style="width:500px;">
+      <div class="modal-header">Edit Suggestion</div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="rigid-form-row">
+          <label for="editTitle">Title:</label>
+          <input type="text" id="editTitle" maxlength="100" style="width:100%;">
+        </div>
+        <div class="rigid-form-row">
+          <label for="editBody">Description/Details:</label>
+          <textarea id="editBody" style="width:100%;height:120px;"></textarea>
+        </div>
+        <div style="text-align:right;">
+          <button type="button" onclick="app.saveEdit()">Save Changes</button>
+          <button type="button" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="reportModal">
+    <div class="modal-window" style="width:500px;max-width:95vw;">
+      <div class="modal-header">Report this post</div>
+      <div class="modal-body">
+        <p id="reportPostTitle" style="font-weight:bold;margin-bottom:10px;"></p>
+        <input type="hidden" id="reportSuggestionId">
+        <div style="margin:8px 0;"><label><input type="radio" name="reportReason" value="Inappropriate content (goes against server rules)" checked> Inappropriate content (goes against server rules)</label></div>
+        <div style="margin:8px 0;"><label><input type="radio" name="reportReason" value="Spam"> Spam</label></div>
+        <div style="margin:8px 0;"><label><input type="radio" name="reportReason" value="Other"> Other</label></div>
+        <div id="reportOtherWrap" style="display:none;margin:8px 0;"><label for="reportOtherText">Please explain:</label><textarea id="reportOtherText" maxlength="1000" style="width:100%;height:90px;"></textarea></div>
+        <p class="meta-text" style="margin:8px 0 12px;">Reports are visible to the admin team. Please report posts that genuinely need review.</p>
+        <div style="text-align:right;"><button type="button" onclick="app.submitReport()">Submit Report</button> <button type="button" onclick="app.closeReportModal()">Cancel</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      signInAnonymously,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      addDoc,
+      query,
+      orderBy,
+      limit,
+      doc,
+      getDoc,
+      setDoc,
+      arrayUnion,
+      writeBatch,
+      deleteDoc,
+      updateDoc,
+      runTransaction
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvHwtJJJDF1fpQ2ipDOLRBPjUahhpfUn0",
+      authDomain: "accs-voting.firebaseapp.com",
+      projectId: "accs-voting",
+      storageBucket: "accs-voting.firebasestorage.app",
+      messagingSenderId: "1055415395653",
+      appId: "1:1055415395653:web:cb3cf37cdf38994b4f8a2c",
+      measurementId: "G-HKK6ERKWVC"
+    };
+
+    const app_firebase = initializeApp(firebaseConfig);
+    window.db = getFirestore(app_firebase);
+    window.auth = getAuth(app_firebase);
+
+    const db = window.db;
+    const auth = window.auth;
+
+    const appId = 'accs-voting-portal';
+    const COOLDOWN_MS = 60 * 60 * 1000;
+    const PASS_TIME_MS = 7 * 24 * 60 * 60 * 1000;
+
+    window.app = {
+      currentUser: null,
+      userData: null,
+      suggestions: [],
+      moderationData: {},
+      unsubModeration: {},
+      voteSort: 'latest',
+      unsubSuggestions: null,
+      unsubReports: null,
+      reports: [],
+      unsubDeletionHistory: null,
+      deletionHistory: [],
+      reportTargetId: null,
+      resolvingSuggestions: new Set(),
+
+      pendingDiscordCode: null,
+
+      init: () => {
+        onAuthStateChanged(auth, (user) => {
+          app.currentUser = user;
+          console.log("Firebase auth state:", user ? "Authenticated" : "Not authenticated");
+        });
+        app.handleDiscordCallback();
+      },
+
+      msg: (title, text) => {
+        document.getElementById('msgModalTitle').innerText = title;
+        document.getElementById('msgModalText').innerText = text;
+        document.getElementById('msgModal').style.display = 'flex';
+      },
+
+      navigate: (viewId) => {
+        document.querySelectorAll('.content-area .view').forEach(v => v.classList.remove('active'));
+        const view = document.getElementById(viewId);
+        if (!view) {
+          return;
+        }
+        view.classList.add('active');
+        if (viewId === 'home-view') {
+          app.renderHome();
+        }
+        if (viewId === 'vote-view') {
+          app.renderVote();
+        }
+        if (viewId === 'my-suggestions-view') {
+          app.renderMySuggestions();
+        }
+        if (viewId === 'admin-view') {
+          if (!app.userData?.isAdmin) {
+            return app.navigate('home-view');
+          }
+          app.renderAdmin();
+        }
+        if (viewId === 'admin-moderation-view') {
+          if (!app.userData?.isAdmin) {
+            return app.navigate('home-view');
+          }
+          app.renderPostModeration();
+        }
+        if (viewId === 'admin-reports-view') {
+          if (!app.userData?.isAdmin) {
+            return app.navigate('home-view');
+          }
+          app.renderReports();
+        }
+        if (viewId === 'admin-deletion-history-view') {
+          if (!app.userData?.isAdmin) {
+            return app.navigate('home-view');
+          }
+          app.renderDeletionHistory();
+        }
+        if (viewId === 'suggest-view') {
+          app.checkCooldown();
+        }
+      },
+
+      login: () => {
+        window.location.href = 'https://accs-voting-api.peachworks001.workers.dev/auth/discord/start';
+      },
+
+      handleDiscordCallback: async () => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('discord_code');
+        const oauthError = params.get('discord_error');
+        const errorEl = document.getElementById('loginError');
+
+        if (oauthError) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          const messages = {
+            discord_server_required: 'You must be a member of the ACCS Discord server to log in.',
+            discord_login_invalid: 'Your Discord login expired or could not be verified. Please try again.',
+            discord_login_failed: 'Discord login failed. Please try again.'
+          };
+          errorEl.textContent = messages[oauthError] || 'Discord authentication failed.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        if (!code) {
+          return;
+        }
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+        const loginBtn = document.getElementById('discordLoginBtn');
+        loginBtn.disabled = true;
+        errorEl.style.display = 'none';
+
+        try {
+          const response = await fetch('https://accs-voting-api.peachworks001.workers.dev/auth/discord/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || 'Discord login failed.');
+          }
+
+          if (result.needsRegistration) {
+            app.pendingDiscordCode = code;
+            document.getElementById('minecraftRegistration').style.display = 'block';
+            loginBtn.style.display = 'none';
+            document.getElementById('registrationMc').focus();
+            return;
+          }
+          if (!result.success || !result.user) {
+            throw new Error('The server returned an invalid login response.');
+          }
+          await app.finishDiscordLogin(result.user);
+        } catch (error) {
+          console.error('Discord login failed:', error);
+          errorEl.textContent = error.message || 'Unable to complete Discord login. Please try again.';
+          errorEl.style.display = 'block';
+        } finally {
+          loginBtn.disabled = false;
+        }
+      },
+
+      registerDiscord: async () => {
+        const minecraft = document.getElementById('registrationMc').value.trim();
+        const registerBtn = document.getElementById('registerDiscordBtn');
+        const errorEl = document.getElementById('loginError');
+        if (!app.pendingDiscordCode) {
+          errorEl.textContent = 'Your registration session has expired. Please log in with Discord again.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        if (!/^[A-Za-z0-9_]{1,16}$/.test(minecraft)) {
+          errorEl.textContent = 'Enter a valid Minecraft username (1–16 letters, numbers, or underscores).';
+          errorEl.style.display = 'block';
+          return;
+        }
+        registerBtn.disabled = true;
+        errorEl.style.display = 'none';
+        try {
+          const response = await fetch('https://accs-voting-api.peachworks001.workers.dev/auth/discord/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: app.pendingDiscordCode, minecraft })
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success || !result.user) {
+            throw new Error(result.error || 'Registration failed.');
+          }
+          app.pendingDiscordCode = null;
+          await app.finishDiscordLogin(result.user);
+        } catch (error) {
+          console.error('Discord registration failed:', error);
+          errorEl.textContent = error.message || 'Registration failed. Please try again.';
+          errorEl.style.display = 'block';
+        } finally {
+          registerBtn.disabled = false;
+        }
+      },
+
+      finishDiscordLogin: async (account) => {
+        let user = auth.currentUser;
+        if (!user) {
+          const credential = await signInAnonymously(auth);
+          user = credential.user;
+        }
+        if (!user) {
+          throw new Error('Firebase authentication returned no user.');
+        }
+
+        const discordHandle = account.discordHandle || account.discord_handle || account.username || 'Discord User';
+        const mcUsername = account.mcUsername || account.minecraft_username;
+        const isAdmin = account.isAdmin === true || account.is_admin === 1 || account.is_admin === true;
+        if (!mcUsername) {
+          throw new Error('The server did not return a Minecraft username for this account.');
+        }
+
+        app.currentUser = user;
+        app.userData = { uid: user.uid, discordHandle, mcUsername, isAdmin };
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('app-wrapper').style.display = 'flex';
+        document.getElementById('navUserDisplay').innerText = discordHandle + (isAdmin ? ' (Admin)' : '');
+        document.getElementById('adminNavBtn').style.display = isAdmin ? 'block' : 'none';
+        document.getElementById('minecraftRegistration').style.display = 'none';
+        app.listenToData();
+        if (isAdmin) {
+          app.listenToReports();
+          app.listenToDeletionHistory();
+        }
+        app.navigate('home-view');
+      },
+
+      logout: () => {
+        app.userData = null;
+        if (app.unsubSuggestions) {
+          app.unsubSuggestions();
+          app.unsubSuggestions = null;
+        }
+        if (app.unsubReports) { 
+          app.unsubReports(); 
+          app.unsubReports = null; 
+        }
+        if (app.unsubDeletionHistory) { 
+          app.unsubDeletionHistory(); 
+          app.unsubDeletionHistory = null; 
+        }
+        app.reports = [];
+        app.deletionHistory = [];
+        Object.values(app.unsubModeration || {}).forEach(unsub => unsub());
+        app.unsubModeration = {};
+        app.moderationData = {};
+        document.getElementById('app-wrapper').style.display = 'none';
+        document.getElementById('login-view').style.display = 'flex';
+        app.pendingDiscordCode = null;
+        document.getElementById('registrationMc').value = '';
+        document.getElementById('minecraftRegistration').style.display = 'none';
+        document.getElementById('discordLoginBtn').style.display = '';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('adminNavBtn').style.display = 'none';
+      },
+
+      listenToData: () => {
+        if (!app.currentUser || !db) {
+          return;
+        }
+        const path = `artifacts/${appId}/public/data/suggestions`;
+        if (app.unsubSuggestions) {
+          app.unsubSuggestions();
+        }
+
+        app.unsubSuggestions = onSnapshot(collection(db, path), (snapshot) => {
+          app.suggestions = [];
+          snapshot.forEach(snapshotDoc => {
+            app.suggestions.push({ id: snapshotDoc.id, ...snapshotDoc.data() });
+          });
+
+          app.evaluateStatuses();
+          app.syncModerationListeners();
+
+          const activeView = document.querySelector('.content-area .view.active');
+          if (activeView) {
+            if (activeView.id === 'home-view') { app.renderHome(); }
+            if (activeView.id === 'vote-view') { app.renderVote(); }
+            if (activeView.id === 'my-suggestions-view') { app.renderMySuggestions(); }
+            if (activeView.id === 'admin-view') { app.renderAdmin(); }
+            if (activeView.id === 'admin-moderation-view') { app.renderPostModeration(); }
+            if (activeView.id === 'admin-reports-view') { app.renderReports(); }
+            if (activeView.id === 'admin-deletion-history-view') { app.renderDeletionHistory(); }
+            if (activeView.id === 'suggest-view') { app.checkCooldown(); }
+          }
+        }, error => {
+          console.error('Firestore listener failed:', error);
+          app.msg('Database Error', 'Unable to load suggestions. Check Firestore permissions and the console.');
+        });
+      },
+
+      listenToReports: () => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        if (app.unsubReports) {
+          app.unsubReports();
+        }
+        const reportsQuery = query(collection(db, `artifacts/${appId}/public/data/reports`), orderBy('timestamp', 'desc'), limit(500));
+        app.unsubReports = onSnapshot(reportsQuery, snapshot => {
+          app.reports = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          const openCount = app.reports.filter(r => (r.status || 'open') === 'open').length;
+          const countEl = document.getElementById('adminReportCount');
+          if (countEl) {
+            countEl.textContent = String(openCount);
+            countEl.style.color = openCount > 1 ? '#d00000' : 'inherit';
+            countEl.style.fontWeight = openCount > 1 ? 'bold' : 'normal';
+            const navLink = document.getElementById('adminReportsNavBtn');
+            if (navLink) { 
+              navLink.style.color = openCount > 1 ? '#d00000' : ''; 
+              navLink.style.fontWeight = openCount > 1 ? 'bold' : ''; 
+            }
+          }
+          if (document.getElementById('admin-reports-view')?.classList.contains('active')) {
+            app.renderReports();
+          }
+          if (document.getElementById('admin-moderation-view')?.classList.contains('active')) {
+            app.renderPostModeration();
+          }
+        }, error => {
+          console.error('Reports listener failed:', error);
+          const feed = document.getElementById('adminReportsFeed');
+          if (feed) {
+            feed.innerHTML = '<p>Could not load reports. Check Firestore permissions for the reports collection.</p>';
+          }
+        });
+      },
+
+      renderReports: () => {
+        if (!app.userData?.isAdmin) {
+          return;
+        }
+        const feed = document.getElementById('adminReportsFeed');
+        if (!feed) {
+          return;
+        }
+        const open = app.reports.filter(r => (r.status || 'open') === 'open');
+        const resolved = app.reports.filter(r => r.status === 'resolved');
+        const renderOne = r => `<div class="data-box" style="margin-bottom:12px;">
+                <div class="data-box-header"><span>${app.escapeHtml(r.suggestionTitle || 'Untitled post')}</span><span class="status-badge">${app.escapeHtml((r.status || 'open').toUpperCase())}</span></div>
+                <div class="data-box-content">
+                    <div class="meta-text">Reported: ${app.escapeHtml(new Date(Number(r.timestamp || 0)).toLocaleString())} | Reporter: ${app.escapeHtml(r.reporterDiscord || r.reporterMc || 'Unknown')} (${app.escapeHtml(r.reporterKey || 'unknown')})</div>
+                    <p style="margin:8px 0;"><strong>Reason:</strong> ${app.escapeHtml(r.reason || 'Unspecified')}</p>
+                    ${r.details ? `<p style="white-space:pre-wrap;margin:8px 0;"><strong>Details:</strong> ${app.escapeHtml(r.details)}</p>` : ''}
+                    <p class="meta-text">Post ID: ${app.escapeHtml(r.suggestionId || 'unknown')}</p>
+                    ${(r.status || 'open') === 'open' ? `<div class="vote-controls"><button onclick="app.deleteReportedPost('${r.suggestionId}','${r.id}')" style="color:var(--aa-red);">Delete Post Immediately</button> <button onclick="app.resolveReport('${r.id}')">Mark Report Reviewed</button></div>` : ''}
+                </div></div>`;
+        feed.innerHTML = `<h3>Open reports (${open.length})</h3>${open.length ? open.map(renderOne).join('') : '<p>No open reports. You are all caught up.</p>'}<h3 style="margin-top:20px;">Reviewed reports (${resolved.length})</h3>${resolved.length ? resolved.map(renderOne).join('') : '<p>No reviewed reports yet.</p>'}`;
+      },
+
+      resolveReport: async (reportId) => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        try {
+          await updateDoc(doc(db, `artifacts/${appId}/public/data/reports`, reportId), { 
+            status: 'resolved', 
+            reviewedAt: Date.now(), 
+            reviewedBy: app.userData.discordHandle || 'Unknown admin' 
+          });
+        } catch (error) {
+          console.error('Could not update report status:', error);
+          app.msg('Error', 'Could not mark this report as reviewed. Check Firestore permissions.');
+        }
+      },
+
+      listenToDeletionHistory: () => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        if (app.unsubDeletionHistory) {
+          app.unsubDeletionHistory();
+        }
+        const historyQuery = query(collection(db, `artifacts/${appId}/public/data/postDeletionHistory`), orderBy('deletedAt', 'desc'), limit(500));
+        app.unsubDeletionHistory = onSnapshot(historyQuery, snapshot => {
+          app.deletionHistory = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          if (document.getElementById('admin-deletion-history-view')?.classList.contains('active')) {
+            app.renderDeletionHistory();
+          }
+        }, error => {
+          console.error('Deletion history listener failed:', error);
+          const feed = document.getElementById('postDeletionHistoryFeed');
+          if (feed) {
+            feed.innerHTML = '<p>Could not load deletion history. Check Firestore permissions for the postDeletionHistory collection.</p>';
+          }
+        });
+      },
+
+      renderDeletionHistory: () => {
+        if (!app.userData?.isAdmin) {
+          return;
+        }
+        const feed = document.getElementById('postDeletionHistoryFeed');
+        if (!feed) {
+          return;
+        }
+        if (!app.deletionHistory.length) { 
+          feed.innerHTML = '<p>No posts have been deleted through admin moderation yet.</p>'; 
+          return; 
+        }
+        feed.innerHTML = app.deletionHistory.map(entry => `<div class="data-box" style="margin-bottom:12px;">
+                <div class="data-box-header"><span>${app.escapeHtml(entry.title || 'Untitled post')}</span><span class="status-badge">DELETED</span></div>
+                <div class="data-box-content"><div class="meta-text">Deleted: ${app.escapeHtml(new Date(Number(entry.deletedAt || 0)).toLocaleString())} | By: ${app.escapeHtml(entry.deletedBy || 'Unknown admin')} | Original author: ${app.escapeHtml(entry.authorDiscord || entry.authorMc || 'Unknown')}</div>
+                <p style="margin:8px 0;"><strong>Reason:</strong> ${app.escapeHtml(entry.reason || 'Admin moderation')}</p>
+                <div style="white-space:pre-wrap;border-top:1px solid #ccc;padding-top:8px;">${app.escapeHtml(entry.body || '')}</div><p class="meta-text" style="margin-top:8px;">Original post ID: ${app.escapeHtml(entry.suggestionId || 'unknown')}</p></div></div>`).join('');
+      },
+
+      openReportModal: (id) => {
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug || sug.status !== 'active') {
+          return;
+        }
+        app.reportTargetId = id;
+        document.getElementById('reportSuggestionId').value = id;
+        document.getElementById('reportPostTitle').textContent = sug.title || 'Untitled post';
+        document.getElementById('reportOtherText').value = '';
+        document.querySelectorAll('input[name="reportReason"]').forEach((el, i) => { 
+          el.checked = i === 0; 
+        });
+        document.getElementById('reportOtherWrap').style.display = 'none';
+        document.getElementById('reportModal').style.display = 'flex';
+      },
+
+      closeReportModal: () => { 
+        document.getElementById('reportModal').style.display = 'none'; 
+      },
+
+      submitReport: async () => {
+        if (!app.userData || !db) { 
+          app.msg('Report Unavailable', 'Please log in before reporting a post.'); 
+          return; 
+        }
+        const id = document.getElementById('reportSuggestionId').value;
+        const sug = app.suggestions.find(s => s.id === id);
+        const selected = document.querySelector('input[name="reportReason"]:checked');
+        const reason = selected?.value || 'Inappropriate content (goes against server rules)';
+        const details = document.getElementById('reportOtherText').value.trim();
+        if (!sug) { 
+          app.msg('Post Unavailable', 'This post no longer exists.'); 
+          app.closeReportModal(); 
+          return; 
+        }
+        if (reason === 'Other' && !details) { 
+          app.msg('Details Required', 'Please explain why you are reporting this post.'); 
+          return; 
+        }
+        try {
+          await addDoc(collection(db, `artifacts/${appId}/public/data/reports`), {
+            suggestionId: id, 
+            suggestionTitle: sug.title || 'Untitled post',
+            reason, 
+            details: reason === 'Other' ? details : '',
+            reporterKey: app.accountKey(), 
+            reporterDiscord: app.userData.discordHandle || '',
+            reporterMc: app.userData.mcUsername || '', 
+            timestamp: Date.now(), 
+            status: 'open'
+          });
+          app.closeReportModal();
+          app.msg('Report Submitted', 'Thank you. Your report has been sent to the admin team.');
+        } catch (error) {
+          console.error('Report submission failed:', error);
+          app.msg('Report Failed', 'Your report could not be saved. Check Firestore permissions and try again.');
+        }
+      },
+
+      deleteAdminPost: async (id, reason = 'Admin moderation', reportId = '') => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug) { 
+          app.msg('Post Not Found', 'This post may already have been deleted.'); 
+          return; 
+        }
+        if (!confirm(`Permanently remove “${sug.title || 'Untitled post'}”? A copy will be saved in Post Deletion History.`)) {
+          return;
+        }
+        const suggestionRef = doc(db, `artifacts/${appId}/public/data/suggestions`, id);
+        const historyRef = doc(collection(db, `artifacts/${appId}/public/data/postDeletionHistory`));
+        const batch = writeBatch(db);
+        batch.set(historyRef, { 
+          suggestionId: id, 
+          title: sug.title || 'Untitled post', 
+          body: sug.body || '', 
+          authorDiscord: sug.authorDiscord || '', 
+          authorMc: sug.authorMc || '', 
+          authorAccountKey: sug.authorAccountKey || '', 
+          deletedAt: Date.now(), 
+          deletedBy: app.userData.discordHandle || 'Unknown admin', 
+          deletedByKey: app.accountKey(), 
+          reason 
+        });
+        batch.delete(suggestionRef);
+        if (reportId) {
+          batch.update(doc(db, `artifacts/${appId}/public/data/reports`, reportId), { 
+            status: 'resolved', 
+            reviewedAt: Date.now(), 
+            reviewedBy: app.userData.discordHandle || 'Unknown admin', 
+            resolution: 'post_deleted' 
+          });
+        }
+        try {
+          await batch.commit();
+          app.msg('Post Deleted', 'The post was removed immediately. A record of the original post is available in Post Deletion History.');
+        } catch (error) {
+          console.error('Admin post deletion failed:', error);
+          app.msg('Deletion Failed', 'The post was not deleted because the database could not save the deletion record or update the post. Check Firestore permissions for suggestions, reports, and postDeletionHistory.');
+        }
+      },
+
+      deleteReportedPost: (suggestionId, reportId) => app.deleteAdminPost(suggestionId, 'Deleted after community report', reportId),
+
+      syncModerationListeners: () => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        const path = `artifacts/${appId}/public/data/suggestions`;
+        const eligible = new Set(app.suggestions
+          .filter(s => s.status === 'passed' && s.reviewStatus !== 'finalized' && !s.moderatorFinalizedAt)
+          .map(s => s.id));
+        Object.keys(app.unsubModeration).forEach(id => {
+          if (!eligible.has(id)) {
+            app.unsubModeration[id]();
+            delete app.unsubModeration[id];
+            delete app.moderationData[id];
+          }
+        });
+        eligible.forEach(id => {
+          if (app.unsubModeration[id]) {
+            return;
+          }
+          const reviewRef = doc(db, path, id, 'moderation', 'review');
+          app.unsubModeration[id] = onSnapshot(reviewRef, snap => {
+            app.moderationData[id] = snap.exists() ? snap.data() : {};
+            const activeView = document.querySelector('.content-area .view.active');
+            if (activeView?.id === 'admin-view') {
+              app.renderAdmin();
+            }
+          }, error => {
+            console.error('Private moderation listener failed:', error);
+          });
+        });
+      },
+
+      evaluateStatuses: () => {
+        const now = Date.now();
+        app.suggestions.forEach(sug => {
+          if (sug.status === 'active' && Number(sug.createdAt) &&
+            now >= Number(sug.createdAt) + PASS_TIME_MS &&
+            !app.resolvingSuggestions.has(sug.id)) {
+            app.resolvingSuggestions.add(sug.id);
+            const up = sug.upvotes?.length || 0;
+            const down = sug.downvotes?.length || 0;
+            const path = `artifacts/${appId}/public/data/suggestions`;
+            const ref = doc(db, path, sug.id);
+            
+            const total = up + down;
+            const approved = total >= 5 && (up / total) >= 0.60;
+            const denied = total >= 5 && (down / total) >= 0.60;
+            let updates;
+            if (approved) {
+              updates = {
+                status: 'passed',
+                communityVerdict: 'COMMUNITY APPROVED',
+                communityResolvedAt: now,
+                resolvedAt: now,
+                reviewStatus: 'pending',
+                reviewStartedAt: sug.reviewStartedAt || now,
+                moderatorVoteTally: sug.moderatorVoteTally || { accept: 0, deny: 0, total: 0 }
+              };
+            } else if (denied) {
+              updates = {
+                status: 'failed',
+                communityVerdict: 'COMMUNITY DENIED',
+                communityResolvedAt: now,
+                resolvedAt: now,
+                reviewStatus: 'not-required',
+                verdict: 'COMMUNITY DENIED'
+              };
+            } else {
+              updates = {
+                status: 'passed',
+                communityVerdict: 'COMMUNITY INCONCLUSIVE',
+                communityResolvedAt: now,
+                resolvedAt: now,
+                reviewStatus: 'pending',
+                reviewStartedAt: sug.reviewStartedAt || now,
+                moderatorVoteTally: sug.moderatorVoteTally || { accept: 0, deny: 0, total: 0 }
+              };
+            }
+            updateDoc(ref, updates).catch(error => {
+              app.resolvingSuggestions.delete(sug.id);
+              console.error('Status update failed:', error);
+            });
+          }
+        });
+      },
+
+      accountKey: () => (app.userData?.mcUsername || '').trim().toLowerCase(),
+
+      cooldownDocRef: () => {
+        const key = encodeURIComponent(app.accountKey());
+        return doc(db, `artifacts/${appId}/public/data/cooldowns`, key);
+      },
+
+      checkCooldown: async () => {
+        if (!app.userData) {
+          return;
+        }
+        const btn = document.getElementById('submitSuggestBtn');
+        const warn = document.getElementById('cooldownWarning');
+        if (!btn || !warn) {
+          return;
+        }
+
+        if (app.userData.isAdmin) {
+          btn.disabled = false;
+          warn.style.display = 'none';
+          return;
+        }
+
+        try {
+          const snap = await getDoc(app.cooldownDocRef());
+          const lastSubmit = snap.exists() ? Number(snap.data().lastSubmitAt || 0) : 0;
+          const remaining = COOLDOWN_MS - (Date.now() - lastSubmit);
+          const active = lastSubmit > 0 && remaining > 0;
+          btn.disabled = active;
+          
+          warn.style.display = 'block';
+          if (active) {
+            const minutes = Math.ceil(remaining / 60000);
+            warn.textContent = `Submission cooldown active: please wait ${minutes} minute(s) before suggesting again.`;
+          } else {
+            warn.textContent = 'Suggestion cooldown: one suggestion per account every 1 hour.';
+          }
+        } catch (error) {
+          console.error('Cooldown lookup failed:', error);
+          
+          btn.disabled = true;
+          warn.style.display = 'block';
+          warn.textContent = 'Cooldown status could not be verified. Please refresh or try again later.';
+        }
+      },
+
+      updateTimers: () => {
+        document.querySelectorAll('[data-deadline]').forEach(el => {
+          const remaining = Number(el.dataset.deadline) - Date.now();
+          if (remaining <= 0) {
+            el.textContent = 'Voting period ended — resolving…';
+            return;
+          }
+          const days = Math.floor(remaining / 86400000);
+          const hours = Math.floor((remaining % 86400000) / 3600000);
+          const minutes = Math.floor((remaining % 3600000) / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          el.textContent = `Voting closes in ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        });
+      },
+
+      submitSuggestion: async () => {
+        if (!app.currentUser || !app.userData || !db) {
+          return;
+        }
+        const title = document.getElementById('suggestTitle').value.trim();
+        const body = document.getElementById('suggestBody').value.trim();
+        const btn = document.getElementById('submitSuggestBtn');
+
+        if (!title || !body) {
+          app.msg('Input Error', 'Please provide both a title and description.');
+          return;
+        }
+        if (btn) {
+          btn.disabled = true;
+        }
+
+        try {
+          if (!app.userData.isAdmin) {
+            const cooldownSnap = await getDoc(app.cooldownDocRef());
+            const lastSubmit = cooldownSnap.exists() ? Number(cooldownSnap.data().lastSubmitAt || 0) : 0;
+            if (lastSubmit > 0 && Date.now() - lastSubmit < COOLDOWN_MS) {
+              await app.checkCooldown();
+              app.msg('Cooldown Active', 'You must wait 1 hour between suggestions.');
+              return;
+            }
+          }
+
+          const now = Date.now();
+          const newDoc = {
+            authorUid: app.userData.uid,
+            authorAccountKey: app.accountKey(),
+            authorDiscord: app.userData.discordHandle,
+            authorMc: app.userData.mcUsername,
+            title,
+            body,
+            createdAt: now,
+            upvotes: [],
+            downvotes: [],
+            status: 'active',
+            verdict: 'NOT REVIEWED',
+            comments: [],
+            editHistory: []
+          };
+
+          const docRef = doc(collection(db, `artifacts/${appId}/public/data/suggestions`));
+          const batch = writeBatch(db);
+          batch.set(docRef, newDoc);
+
+          if (!app.userData.isAdmin) {
+            batch.set(app.cooldownDocRef(), {
+              accountKey: app.accountKey(),
+              lastSubmitAt: now
+            });
+          }
+          await batch.commit();
+
+          document.getElementById('suggestTitle').value = '';
+          document.getElementById('suggestBody').value = '';
+          await app.checkCooldown();
+          app.navigate('home-view');
+        } catch (error) {
+          console.error('Suggestion submission failed:', error);
+          app.msg('System Error', 'Failed to submit or record the cooldown. Please check your connection and try again.');
+        } finally {
+          if (btn && !app.userData?.isAdmin) {
+            await app.checkCooldown();
+          } else if (btn) {
+            btn.disabled = false;
+          }
+        }
+      },
+
+      toggleVote: async (sugId, type) => {
+        if (!app.currentUser || !app.userData || !db) {
+          return;
+        }
+        const sug = app.suggestions.find(s => s.id === sugId);
+        if (!sug || sug.status !== 'active') {
+          return;
+        }
+
+        const voter = app.accountKey();
+        let ups = [...(sug.upvotes || [])];
+        let downs = [...(sug.downvotes || [])];
+
+        const legacyUid = app.userData.uid;
+        if (legacyUid !== voter) {
+          ups = ups.filter(id => id !== legacyUid);
+          downs = downs.filter(id => id !== legacyUid);
+        }
+
+        if (type === 'up') {
+          if (ups.includes(voter)) {
+            ups = ups.filter(id => id !== voter);
+          } else { 
+            ups.push(voter); 
+            downs = downs.filter(id => id !== voter); 
+          }
+        } else {
+          if (downs.includes(voter)) {
+            downs = downs.filter(id => id !== voter);
+          } else { 
+            downs.push(voter); 
+            ups = ups.filter(id => id !== voter); 
+          }
+        }
+
+        const path = `artifacts/${appId}/public/data/suggestions`;
+        try {
+          await updateDoc(doc(db, path, sugId), { upvotes: ups, downvotes: downs });
+        } catch (error) {
+          console.error('Vote failed:', error);
+          app.msg('Vote Error', 'Your vote could not be saved. Check database permissions and try again.');
+        }
+      },
+
+      submitComment: async (sugId) => {
+        if (!app.userData || !db) {
+          return;
+        }
+        const input = document.getElementById(`comment-input-${sugId}`);
+        const body = input?.value.trim();
+        if (!body) {
+          app.msg('Comment Required', 'Please enter a comment first.');
+          return;
+        }
+        if (body.length > 500) {
+          app.msg('Comment Too Long', 'Comments must be 500 characters or fewer.');
+          return;
+        }
+        const sug = app.suggestions.find(s => s.id === sugId);
+        if (!sug || sug.status !== 'active') {
+          app.msg('Comments Closed', 'Comments are only available while a suggestion is active.');
+          return;
+        }
+        const comment = {
+          accountKey: app.accountKey(),
+          authorMc: app.userData.mcUsername,
+          authorDiscord: app.userData.discordHandle,
+          body,
+          createdAt: Date.now()
+        };
+        try {
+          await updateDoc(doc(db, `artifacts/${appId}/public/data/suggestions`, sugId), {
+            comments: arrayUnion(comment)
+          });
+        } catch (error) {
+          console.error('Comment failed:', error);
+          app.msg('Comment Error', 'Your comment could not be saved.');
+        }
+      },
+
+      submitModeratorVote: async (sugId, choice) => {
+        if (!app.userData?.isAdmin || !db || !['ACCEPT', 'DENY'].includes(choice)) {
+          return;
+        }
+        const voter = app.accountKey();
+        if (!voter) {
+          return;
+        }
+        const basePath = `artifacts/${appId}/public/data/suggestions`;
+        const ref = doc(db, basePath, sugId);
+        const reviewRef = doc(db, basePath, sugId, 'moderation', 'review');
+        try {
+          const result = await runTransaction(db, async (tx) => {
+            const [snap, reviewSnap] = await Promise.all([tx.get(ref), tx.get(reviewRef)]);
+            if (!snap.exists()) {
+              throw new Error('Suggestion no longer exists.');
+            }
+            const current = snap.data();
+            if (current.status !== 'passed' || current.reviewStatus === 'finalized') {
+              throw new Error('This review is already finalized or is not awaiting review.');
+            }
+            const privateReview = reviewSnap.exists() ? reviewSnap.data() : {};
+            const votes = { ...(privateReview.moderatorVotes || {}) };
+            if (Object.prototype.hasOwnProperty.call(votes, voter)) {
+              throw new Error('You have already voted on this suggestion. Moderator votes cannot be changed.');
+            }
+            votes[voter] = { choice, accountKey: voter, displayName: app.userData.discordHandle || app.userData.mcUsername, votedAt: Date.now() };
+            const voteList = Object.values(votes);
+            const acceptCount = voteList.filter(v => (typeof v === 'string' ? v : v.choice) === 'ACCEPT').length;
+            const denyCount = voteList.filter(v => (typeof v === 'string' ? v : v.choice) === 'DENY').length;
+            const now = Date.now();
+            tx.set(reviewRef, { moderatorVotes: votes, moderatorNotes: Array.isArray(privateReview.moderatorNotes) ? privateReview.moderatorNotes : [], updatedAt: now }, { merge: true });
+            const updates = {};
+            if (voteList.length >= 5) {
+              updates.moderatorVoteTally = { accept: acceptCount, deny: denyCount, total: voteList.length };
+              const verdict = acceptCount > denyCount ? 'ACCEPTED' : 'DENIED';
+              const notes = Array.isArray(privateReview.moderatorNotes) ? privateReview.moderatorNotes : [];
+              updates.reviewStatus = 'finalized';
+              updates.moderatorVerdict = verdict;
+              updates.verdict = verdict;
+              updates.moderatorFinalizedAt = now;
+              updates.resolvedAt = now;
+              updates.publishedModeratorNotes = notes;
+            } else {
+              updates.reviewStatus = 'pending';
+            }
+            tx.update(ref, updates);
+            return { acceptCount, denyCount, total: voteList.length, finalized: voteList.length >= 5 };
+          });
+          app.msg(result.finalized ? 'Review Finalized' : 'Vote Recorded', result.finalized ? `The moderator decision is ${result.acceptCount > result.denyCount ? 'ACCEPTED' : 'DENIED'} (${result.acceptCount} Accept, ${result.denyCount} Deny).` : `Your vote was recorded. ${result.total}/5 moderator votes received.`);
+        } catch (error) {
+          console.error('Moderator vote failed:', error);
+          app.msg('Moderator Vote Error', error.message || 'Could not record your vote.');
+        }
+      },
+
+      saveModeratorNote: async (sugId) => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        const input = document.getElementById(`mod-note-${sugId}`);
+        const body = (input?.value || '').trim();
+        if (body.length > 2000) {
+          app.msg('Note Too Long', 'Moderator notes must be 2,000 characters or fewer.');
+          return;
+        }
+        const voter = app.accountKey();
+        if (!voter) {
+          return;
+        }
+        const basePath = `artifacts/${appId}/public/data/suggestions`;
+        const ref = doc(db, basePath, sugId);
+        const reviewRef = doc(db, basePath, sugId, 'moderation', 'review');
+        try {
+          await runTransaction(db, async (tx) => {
+            const [snap, reviewSnap] = await Promise.all([tx.get(ref), tx.get(reviewRef)]);
+            if (!snap.exists()) {
+              throw new Error('Suggestion no longer exists.');
+            }
+            const current = snap.data();
+            if (current.status !== 'passed' || current.reviewStatus === 'finalized') {
+              throw new Error('Notes are locked because this review is finalized.');
+            }
+            const privateReview = reviewSnap.exists() ? reviewSnap.data() : {};
+            const notes = Array.isArray(privateReview.moderatorNotes) ? [...privateReview.moderatorNotes] : [];
+            const index = notes.findIndex(n => n.authorKey === voter);
+            const now = Date.now();
+            if (index >= 0) {
+              notes[index] = { ...notes[index], body, updatedAt: now };
+            } else if (body) {
+              notes.push({ authorKey: voter, authorDiscord: app.userData.discordHandle || app.userData.mcUsername, body, createdAt: now, updatedAt: now });
+            }
+            tx.set(reviewRef, { moderatorNotes: notes, moderatorVotes: privateReview.moderatorVotes || {}, updatedAt: now }, { merge: true });
+          });
+          app.msg('Note Saved', 'Your moderator note was saved privately. It will be published when the decision is finalized.');
+        } catch (error) {
+          console.error('Moderator note save failed:', error);
+          app.msg('Note Error', error.message || 'Could not save your note.');
+        }
+      },
+
+      toggleHistory: (id) => {
+        const el = document.getElementById(`hist-${id}`);
+        if (el) {
+          el.style.display = el.style.display === 'table' ? 'none' : 'table';
+        }
+      },
+
+      renderBox: (sug, context) => {
+        const up = sug.upvotes?.length || 0;
+        const down = sug.downvotes?.length || 0;
+        const isEdited = sug.editHistory?.length > 0;
+        const dateStr = new Date(sug.createdAt).toLocaleString();
+        const communityDenied = sug.status === 'failed' || sug.communityVerdict === 'COMMUNITY DENIED';
+        const finalized = sug.reviewStatus === 'finalized' || !!sug.moderatorFinalizedAt;
+        const privateReview = context === 'admin' ? (app.moderationData[sug.id] || {}) : {};
+        const votes = privateReview.moderatorVotes && typeof privateReview.moderatorVotes === 'object' ? Object.values(privateReview.moderatorVotes) : [];
+        const publicTally = sug.moderatorVoteTally || {};
+        const acceptCount = context === 'admin' ? votes.filter(v => (typeof v === 'string' ? v : v.choice) === 'ACCEPT').length : Number(publicTally.accept || 0);
+        const denyCount = context === 'admin' ? votes.filter(v => (typeof v === 'string' ? v : v.choice) === 'DENY').length : Number(publicTally.deny || 0);
+        const myKey = app.accountKey();
+        const myVote = privateReview.moderatorVotes?.[myKey];
+        const notes = Array.isArray(context === 'admin' ? privateReview.moderatorNotes : sug.publishedModeratorNotes) ? [...(context === 'admin' ? privateReview.moderatorNotes : sug.publishedModeratorNotes)].sort((a,b) => Number(a.createdAt || 0) - Number(b.createdAt || 0)) : [];
+        const myNote = notes.find(n => n.authorKey === myKey);
+        const publicResult = context === 'home' && !communityDenied && finalized;
+        const statusLabel = communityDenied ? 'COMMUNITY DENIED' : (finalized ? `MODERATOR ${String(sug.moderatorVerdict || sug.verdict || 'UNDECIDED').toUpperCase()}` : (sug.status === 'active' ? 'ACTIVE' : 'PENDING REVIEW'));
+        let html = `
+                <div class="data-box" style="margin-bottom:12px;">
+                    <div class="data-box-header">
+                        <span>${app.escapeHtml(sug.title)}</span>
+                        <span class="status-badge status-${app.escapeHtml(sug.status)}">${app.escapeHtml(statusLabel)}</span>
+                    </div>
+                    <div class="data-box-content">
+                        <div class="meta-text">
+                            ID: ${app.escapeHtml(sug.id.substring(0, 8))} | User: ${app.escapeHtml(sug.authorDiscord || 'Unknown')} | Submitted: ${app.escapeHtml(dateStr)}
+                            ${isEdited ? ` | <a onclick="app.toggleHistory('${sug.id}')">[View Edit History]</a>` : ''}
+                        </div>
+                        <div style="margin-top:5px;white-space:pre-wrap;">${app.escapeHtml(sug.body)}</div>
+                        ${sug.status === 'active' ? `<div style="margin-top:8px;font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt) + PASS_TIME_MS}">Community voting period: 7 days</div>` : ''}
+                        ${sug.status !== 'active' ? `<div style="margin-top:10px;padding:8px;background:#f1f1f1;border:1px solid #aaa;"><strong>Community result:</strong> ${app.escapeHtml(sug.communityVerdict || (communityDenied ? 'COMMUNITY DENIED' : 'COMMUNITY APPROVED'))}<br><span>Upvotes: ${up} | Downvotes: ${down}</span><br><span class="meta-text">A decisive result requires at least 5 votes and 60% for one side.</span></div>` : ''}
+            `;
+
+        if (isEdited) {
+          html += `<table class="history-table" id="hist-${sug.id}"><tr><th>Timestamp</th><th>Old Title</th><th>Old Body</th></tr>`;
+          [...sug.editHistory].reverse().forEach(edit => {
+            html += `<tr><td>${app.escapeHtml(new Date(edit.editedAt).toLocaleString())}</td><td>${app.escapeHtml(edit.title)}</td><td>${app.escapeHtml(edit.body)}</td></tr>`;
+          });
+          html += `</table>`;
+        }
+
+        if (context === 'vote' && sug.status === 'active') {
+          const myUp = sug.upvotes?.includes(myKey) ? 'font-weight:bold;color:var(--aa-navy);' : '';
+          const myDown = sug.downvotes?.includes(myKey) ? 'font-weight:bold;color:var(--aa-red);' : '';
+          html += `<div class="vote-controls"><button style="${myUp}" onclick="app.toggleVote('${sug.id}', 'up')">Upvote (${up})</button> <button style="${myDown}" onclick="app.toggleVote('${sug.id}', 'down')">Downvote (${down})</button> <button onclick="app.openReportModal('${sug.id}')" title="Report this post" style="margin-left:4px;">⚑ Report</button></div>`;
+          const comments = Array.isArray(sug.comments) ? sug.comments : [];
+          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div style="padding:5px 0;border-bottom:1px dotted #bbb;${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong><span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div></div>`;
+        }
+
+        if (context === 'admin' && app.userData?.isAdmin && sug.status === 'passed' && !finalized) {
+          html += `<div style="margin-top:12px;padding-top:8px;border-top:1px solid #aaa;"><strong>Moderator review: ${votes.length}/5 votes received</strong><div style="margin:6px 0;">Accept: ${acceptCount} | Deny: ${denyCount}</div>`;
+          if (myVote) {
+            const myChoice = typeof myVote === 'string' ? myVote : myVote.choice;
+            html += `<p style="margin:6px 0;">Your vote: <strong>${app.escapeHtml(myChoice)}</strong> (locked)</p>`;
+          } else {
+            html += `<div class="vote-controls" style="margin:8px 0;"><button onclick="app.submitModeratorVote('${sug.id}','ACCEPT')">Vote ACCEPT</button> <button onclick="app.submitModeratorVote('${sug.id}','DENY')">Vote DENY</button></div>`;
+          }
+          html += `<div style="margin-top:10px;"><strong>Private moderator notes</strong><p class="meta-text" style="margin:4px 0;">Only admins can see these notes until the decision is finalized. You can edit your own note; other admins' notes are read-only.</p>`;
+          notes.forEach(note => {
+            if (note.authorKey === myKey) {
+              return;
+            }
+            html += `<div style="border:1px solid #aaa;padding:7px;margin:6px 0;background:#fafafa;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.escapeHtml(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`;
+          });
+          html += `<label for="mod-note-${sug.id}" style="display:block;font-weight:bold;margin-top:8px;">${myNote ? 'Edit your note' : 'Write your note'} (2,000 characters max)</label><textarea id="mod-note-${sug.id}" maxlength="2000" style="width:100%;min-height:80px;margin-top:4px;">${app.escapeHtml(myNote?.body || '')}</textarea><div style="margin-top:6px;"><button onclick="app.saveModeratorNote('${sug.id}')">Save My Note</button></div></div></div>`;
+        }
+
+        if (context === 'home') {
+          if (communityDenied) {
+            html += `<div style="margin-top:8px;font-weight:bold;color:var(--aa-red);">Final outcome: Community Denied</div>`;
+          } else if (finalized) {
+            html += `<div style="margin-top:8px;padding:8px;border:1px solid #888;background:#f7f7f7;"><strong>Final moderator verdict: ${app.escapeHtml(String(sug.moderatorVerdict || sug.verdict || 'UNDECIDED').toUpperCase())}</strong><br>Moderator votes: ${acceptCount} Accept · ${denyCount} Deny<br><span class="meta-text">Finalized: ${app.escapeHtml(new Date(sug.moderatorFinalizedAt || sug.resolvedAt || 0).toLocaleString())}</span></div>`;
+            if (notes.length) {
+              html += `<div style="margin-top:10px;"><strong>Published moderator notes</strong>`;
+              notes.forEach(note => { 
+                html += `<div style="border-left:3px solid var(--aa-navy);padding:6px 8px;margin-top:6px;background:#f8f8f8;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.escapeHtml(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`; 
+              });
+              html += `</div>`;
+            }
+          }
+        }
+
+        if (context === 'my' && sug.status === 'active') {
+          html += `<div class="vote-controls"><button onclick="app.openEditModal('${sug.id}')">Edit</button> <button onclick="app.deleteSuggestion('${sug.id}')">Delete</button></div>`;
+        }
+        html += `</div></div>`;
+        return html;
+      },
+
+      renderHome: () => {
+        const recentEl = document.getElementById('recentResolvedFeed');
+        const olderEl = document.getElementById('olderResolvedFeed');
+        if (!recentEl || !olderEl) {
+          return;
+        }
+        const now = Date.now();
+        const list = app.suggestions.filter(s => {
+          if (s.status === 'failed' || s.communityVerdict === 'COMMUNITY DENIED') {
+            return true;
+          }
+          return s.status === 'passed' && (s.reviewStatus === 'finalized' || !!s.moderatorFinalizedAt);
+        }).map(s => ({
+          ...s,
+          _verdictTime: Number((s.status === 'failed' || s.communityVerdict === 'COMMUNITY DENIED') ? (s.communityResolvedAt || s.resolvedAt || s.createdAt) : (s.moderatorFinalizedAt || s.resolvedAt || s.createdAt))
+        })).sort((a,b) => b._verdictTime - a._verdictTime);
+        const recent = list.filter(s => now - s._verdictTime <= PASS_TIME_MS);
+        const older = list.filter(s => now - s._verdictTime > PASS_TIME_MS);
+        recentEl.innerHTML = recent.length ? recent.map(s => app.renderBox(s, 'home')).join('') : '<p>No recent resolved suggestions.</p>';
+        olderEl.innerHTML = older.length ? older.map(s => app.renderBox(s, 'home')).join('') : '<p>No older resolved suggestions.</p>';
+      },
+
+      setVoteSort: (sort) => {
+        app.voteSort = ['latest', 'hottest', 'oldest'].includes(sort) ? sort : 'latest';
+        app.renderVote();
+      },
+
+      toggleComments: (sugId) => {
+        const container = document.getElementById(`comments-${sugId}`);
+        const button = document.getElementById(`comments-toggle-${sugId}`);
+        if (!container || !button) {
+          return;
+        }
+        const expanded = button.dataset.expanded === 'true';
+        container.querySelectorAll('[data-extra-comment="true"]').forEach(comment => {
+          comment.style.display = expanded ? 'none' : 'block';
+        });
+        button.dataset.expanded = expanded ? 'false' : 'true';
+        const total = container.querySelectorAll('div[data-extra-comment="true"]').length + 2;
+        button.textContent = expanded ? `Show all ${total} comments` : 'Show fewer comments';
+      },
+
+      renderVote: () => {
+        const c = document.getElementById('activeFeed');
+        const sortControl = document.getElementById('suggestionSort');
+        if (sortControl && sortControl.value !== app.voteSort) {
+          sortControl.value = app.voteSort;
+        }
+        const list = app.suggestions.filter(s => s.status === 'active');
+        list.sort((a, b) => {
+          if (app.voteSort === 'oldest') {
+            return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+          }
+          if (app.voteSort === 'hottest') {
+            const scoreA = (a.upvotes?.length || 0) - (a.downvotes?.length || 0);
+            const scoreB = (b.upvotes?.length || 0) - (b.downvotes?.length || 0);
+            return scoreB - scoreA || Number(b.createdAt || 0) - Number(a.createdAt || 0);
+          }
+          return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+        });
+        c.innerHTML = list.length ? list.map(s => app.renderBox(s, 'vote')).join('') : '<p>No active suggestions available.</p>';
+      },
+
+      renderMySuggestions: () => {
+        const c = document.getElementById('myFeed');
+        const list = app.suggestions.filter(s => (s.authorAccountKey || (s.authorMc || '').toLowerCase()) === app.accountKey())
+          .sort((a, b) => b.createdAt - a.createdAt);
+        c.innerHTML = list.length ? list.map(s => app.renderBox(s, 'my')).join('') : '<p>No records found.</p>';
+      },
+
+      renderAdmin: () => {
+        if (!app.userData?.isAdmin) {
+          return;
+        }
+        const c = document.getElementById('adminFeed');
+        const list = app.suggestions.filter(s => s.status === 'passed' && s.reviewStatus !== 'finalized' && !s.moderatorFinalizedAt)
+          .sort((a, b) => Number(a.reviewStartedAt || a.resolvedAt || a.createdAt) - Number(b.reviewStartedAt || b.resolvedAt || b.createdAt));
+        c.innerHTML = list.length ? list.map(s => app.renderBox(s, 'admin')).join('') : '<p>No pending moderator reviews. Community-approved and inconclusive suggestions enter this queue after their 7-day voting period. A decisive community result requires at least 5 votes and 60% for one side.</p>';
+      },
+
+      renderPostModeration: () => {
+        if (!app.userData?.isAdmin) {
+          return;
+        }
+        const c = document.getElementById('postModerationFeed');
+        if (!c) {
+          return;
+        }
+        const list = app.suggestions.filter(s => s.status !== 'vetoed').sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+        c.innerHTML = list.length ? list.map(s => {
+          const status = s.status === 'active' ? 'ACTIVE' : (s.status === 'failed' || s.communityVerdict === 'COMMUNITY DENIED' ? 'COMMUNITY DENIED' : (s.reviewStatus === 'finalized' || s.moderatorFinalizedAt ? 'RESOLVED' : 'PENDING REVIEW'));
+          const reportCount = app.reports.filter(r => r.suggestionId === s.id && (r.status || 'open') === 'open').length;
+          return `<div class="data-box" style="margin-bottom:12px;"><div class="data-box-header"><span>${app.escapeHtml(s.title || 'Untitled suggestion')}</span><span class="status-badge">${app.escapeHtml(status)}</span></div><div class="data-box-content">
+                    <div class="meta-text">ID: ${app.escapeHtml(s.id.substring(0, 8))} | User: ${app.escapeHtml(s.authorDiscord || 'Unknown')} | Submitted: ${app.escapeHtml(new Date(Number(s.createdAt || 0)).toLocaleString())} | Open reports: ${reportCount}</div>
+                    <div style="margin-top:7px;white-space:pre-wrap;">${app.escapeHtml(s.body || '')}</div>
+                    <div class="vote-controls" style="margin-top:12px;padding-top:8px;border-top:1px solid #aaa;"><button onclick="app.deleteAdminPost('${s.id}','Removed by admin after review')" style="color:var(--aa-red);font-weight:bold;">Delete Post Immediately</button></div>
+                </div></div>`;
+        }).join('') : '<p>No suggestions are available for post moderation.</p>';
+      },
+
+      openEditModal: (id) => {
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug) {
+          return;
+        }
+        const editId = document.getElementById('editId');
+        const editTitle = document.getElementById('editTitle');
+        const editBody = document.getElementById('editBody');
+        const modal = document.getElementById('editModal');
+        if (!editId || !editTitle || !editBody || !modal) {
+          app.msg('Edit Unavailable', 'The edit form fields are missing from the HTML.');
+          return;
+        }
+        editId.value = id;
+        editTitle.value = sug.title;
+        editBody.value = sug.body;
+        modal.style.display = 'flex';
+      },
+
+      saveEdit: async () => {
+        const id = document.getElementById('editId')?.value;
+        const t = document.getElementById('editTitle')?.value.trim();
+        const b = document.getElementById('editBody')?.value.trim();
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug || !t || !b || !db) {
+          return;
+        }
+
+        if (sug.title === t && sug.body === b) {
+          document.getElementById('editModal').style.display = 'none';
+          return;
+        }
+
+        const newHist = [...(sug.editHistory || []),
+          { title: sug.title, body: sug.body, editedAt: Date.now() }];
+        try {
+          await updateDoc(doc(db, `artifacts/${appId}/public/data/suggestions`, id),
+            { title: t, body: b, editHistory: newHist });
+          document.getElementById('editModal').style.display = 'none';
+        } catch (error) {
+          console.error('Edit failed:', error);
+          app.msg('Error', 'Update failed.');
+        }
+      },
+
+      deleteSuggestion: async (id) => {
+        if (!app.userData?.isAdmin) {
+          return;
+        }
+        await app.deleteAdminPost(id, 'Deleted by admin from suggestion history');
+      },
+
+      adminVeto: async (id) => {
+        if (!app.userData?.isAdmin || !db) {
+          return;
+        }
+        if (!confirm('Are you sure you want to veto this passed suggestion?')) {
+          return;
+        }
+        try {
+          await updateDoc(doc(db, `artifacts/${appId}/public/data/suggestions`, id),
+            { status: 'vetoed' });
+        } catch (error) {
+          console.error('Veto failed:', error);
+          app.msg('Error', 'Could not veto this suggestion.');
+        }
+      },
+
+      escapeHtml: (value) => (value || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+    };
+
+    const app = window.app;
+    document.querySelectorAll('input[name="reportReason"]').forEach(input => input.addEventListener('change', () => {
+      const selected = document.querySelector('input[name="reportReason"]:checked');
+      document.getElementById('reportOtherWrap').style.display = selected?.value === 'Other' ? 'block' : 'none';
+    }));
+    window.onload = app.init;
+  </script>
+</body>
+</html>
