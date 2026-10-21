@@ -665,11 +665,7 @@
 
       pendingDiscordCode: null,
 
-      init: () => {
-        onAuthStateChanged(auth, (user) => {
-      pendingDiscordCode: null,
-
-    playNavSound: () => {
+      playNavSound: () => {
         try {
           if (!app.navAudio) {
             app.navAudio = new Audio('assets/click.wav');
