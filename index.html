@@ -669,13 +669,17 @@
         onAuthStateChanged(auth, (user) => {
       pendingDiscordCode: null,
 
-      playNavSound: () => {
-        if (!app.navAudio) {
-          app.navAudio = new Audio('assets/click.wav');
+    playNavSound: () => {
+        try {
+          if (!app.navAudio) {
+            app.navAudio = new Audio('assets/click.wav');
+          }
+          if (app.navAudio.readyState >= 1) {
+            app.navAudio.currentTime = 0;
+          }
+          app.navAudio.play().catch(() => {});
+        } catch (error) {
         }
-        app.navAudio.currentTime = 0;
-        app.navAudio.play().catch(() => {
-        });
       },
 
       init: () => {
