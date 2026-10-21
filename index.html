@@ -667,10 +667,24 @@
 
       init: () => {
         onAuthStateChanged(auth, (user) => {
+      pendingDiscordCode: null,
+
+      playNavSound: () => {
+        if (!app.navAudio) {
+          app.navAudio = new Audio('assets/click.wav');
+        }
+        app.navAudio.currentTime = 0;
+        app.navAudio.play().catch(() => {
+        });
+      },
+
+      init: () => {
+        onAuthStateChanged(auth, (user) => {
           app.currentUser = user;
           console.log("Firebase auth state:", user ? "Authenticated" : "Not authenticated");
         });
         app.handleDiscordCallback();
+        window.addEventListener('popstate', app.playNavSound);
       },
 
       msg: (title, text) => {
@@ -686,6 +700,7 @@
           return;
         }
         view.classList.add('active');
+        app.playNavSound();
         if (viewId === 'home-view') {
           app.renderHome();
         }
