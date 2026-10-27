@@ -1592,7 +1592,7 @@
                             ${isEdited ? ` | <a onclick="app.toggleHistory('${sug.id}')">[View Edit History]</a>` : ''}
                         </div>
                         <div style="margin-top:5px;white-space:pre-wrap;">${app.escapeHtml(sug.body)}</div>
-                        ${sug.status === 'active' ? `<div style="margin-top:8px;font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt) + PASS_TIME_MS}">Community voting period: 7 days</div>` : ''}
+                        ${sug.status === 'active' ? `<div style="margin-top:8px;font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt || 0) + PASS_TIME_MS}"></div>` : ''}
                         ${sug.status !== 'active' ? `<div style="margin-top:10px;padding:8px;background:#f1f1f1;border:1px solid #aaa;"><strong>Community result:</strong> ${app.escapeHtml(sug.communityVerdict || (communityDenied ? 'COMMUNITY DENIED' : 'COMMUNITY APPROVED'))}<br><span>Upvotes: ${up} | Downvotes: ${down}</span><br><span class="meta-text">A decisive result requires at least 5 votes and 60% for one side.</span></div>` : ''}
             `;
 
@@ -1713,6 +1713,7 @@
           return Number(b.createdAt || 0) - Number(a.createdAt || 0);
         });
         c.innerHTML = list.length ? list.map(s => app.renderBox(s, 'vote')).join('') : '<p>No active suggestions available.</p>';
+        app.updateTimers();
       },
 
       renderMySuggestions: () => {
@@ -1829,6 +1830,7 @@
     };
 
     const app = window.app;
+    window.setInterval(() => app.updateTimers(), 1000);
     document.querySelectorAll('input[name="reportReason"]').forEach(input => input.addEventListener('change', () => {
       const selected = document.querySelector('input[name="reportReason"]:checked');
       document.getElementById('reportOtherWrap').style.display = selected?.value === 'Other' ? 'block' : 'none';
