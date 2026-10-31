@@ -133,6 +133,10 @@
       text-decoration: underline;
     }
 
+    .tag-badge { display:inline-block; padding:2px 6px; margin:4px 4px 0 0; border:1px solid #888; background:#eef; color:var(--aa-navy); font-size:11px; }
+    .unread-badge { color:#a00000; font-weight:bold; margin-left:8px; }
+    .top-nav-bar { flex-wrap:wrap; align-items:center; }
+
     .main-container {
       display: flex;
       flex: 1;
@@ -445,9 +449,10 @@
   <div id="app-wrapper" class="wrapper" style="display: none;">
     <div class="top-header">
       <h1>ACCS Suggestion Voting Portal</h1>
-      <span class="version-label">v0.0.11</span>
+      <span class="version-label">v0.0.12</span>
     </div>
     <div class="top-nav-bar">
+      <button id="notificationsButton" onclick="app.navigate('notifications-view')" aria-label="Notifications, 0 unread">Notifications (<span id="notificationCount" aria-live="polite">0</span>)</button>
       <span>Welcome, <span id="navUserDisplay">User</span> | </span>
       <a onclick="app.logout()">Logout</a>
     </div>
@@ -487,9 +492,18 @@
               <option value="hottest">Hottest post</option>
               <option value="oldest">Oldest post</option>
             </select>
+            <label for="tagFilter">Tag:</label><select id="tagFilter" onchange="app.voteTag=this.value;app.renderVote()"><option value="">All tags</option></select>
           </div>
           <div id="activeFeed"></div>
         </div>
+
+        <div id="notifications-view" class="view">
+          <h2>Notifications</h2>
+          <p class="meta-text">New suggestions and replies to threads you created or commented on. Read status is saved for your account in this browser.</p>
+          <button onclick="app.markAllRead()">Mark all as read</button>
+          <div id="notificationsFeed" style="margin-top:12px;"></div>
+        </div>
+        <div id="thread-view" class="view"><button onclick="app.navigate('notifications-view')">Back to notifications</button><div id="threadFeed" style="margin-top:12px;"></div></div>
 
         <div id="suggest-view" class="view">
           <div class="data-box" style="max-width: 600px;">
@@ -508,6 +522,7 @@
                 <label>Description/Details:</label>
                 <textarea id="suggestBody"></textarea>
               </div>
+              <fieldset id="suggestTags" style="padding:8px;margin:10px 0;"><legend>Tags (optional)</legend><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Quality of Life">Quality of Life</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Client-side">Client-side</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Building">Building</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Visuals">Visuals</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Adventure">Adventure</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Fun">Fun</label></fieldset>
               <div>
                 <button id="submitSuggestBtn" onclick="app.submitSuggestion()">Submit Suggestion</button>
               </div>
@@ -578,6 +593,7 @@
           <label for="editBody">Description/Details:</label>
           <textarea id="editBody" style="width:100%;height:120px;"></textarea>
         </div>
+        <fieldset id="editTags" style="padding:8px;margin:10px 0;"><legend>Tags (optional)</legend><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Quality of Life">Quality of Life</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Client-side">Client-side</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Building">Building</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Visuals">Visuals</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Adventure">Adventure</label><label style="display:inline-flex;align-items:center;gap:4px;margin:4px 12px 4px 0;"><input type="checkbox" value="Fun">Fun</label></fieldset>
         <div style="text-align:right;">
           <button type="button" onclick="app.saveEdit()">Save Changes</button>
           <button type="button" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
@@ -657,6 +673,9 @@
       moderationData: {},
       unsubModeration: {},
       voteSort: 'latest',
+      voteTag: '',
+      readState: {},
+      threadId: null,
       unsubSuggestions: null,
       unsubReports: null,
       reports: [],
@@ -666,6 +685,102 @@
       resolvingSuggestions: new Set(),
 
       pendingDiscordCode: null,
+
+      tagsFor: (sug) => Array.isArray(sug.tags) ? sug.tags.filter(tag => typeof tag === 'string') : [],
+
+      tagOptions: ['Quality of Life', 'Client-side', 'Building', 'Visuals', 'Adventure', 'Fun'],
+
+      parseTags: (value) => {
+        const values = Array.isArray(value) ? value : value.split(',').map(tag => tag.trim()).filter(Boolean);
+        const canonical = values.map(tag => app.tagOptions.find(option => option.toLowerCase() === String(tag).toLowerCase()));
+        if (canonical.some(tag => !tag)) {
+          app.msg('Invalid Tags', 'Choose tags from the six available categories.');
+          return null;
+        }
+        return app.tagOptions.filter(tag => canonical.includes(tag));
+      },
+
+      selectedTags: (id) => app.parseTags([...document.getElementById(id).querySelectorAll('input:checked')].map(input => input.value)),
+
+      setSelectedTags: (id, tags) => {
+        document.getElementById(id).querySelectorAll('input').forEach(input => {
+          input.checked = tags.some(tag => tag.toLowerCase() === input.value.toLowerCase());
+        });
+      },
+
+      loadReadState: () => {
+        app.readState = {};
+        try {
+          const saved = JSON.parse(localStorage.getItem(`accs-read-v1:${app.accountKey()}`) || '{}');
+          if (saved && typeof saved === 'object' && !Array.isArray(saved)) { app.readState = saved; }
+        } catch (error) { console.warn('Read status could not be loaded:', error); }
+      },
+
+      saveReadState: () => {
+        try {
+          localStorage.setItem(`accs-read-v1:${app.accountKey()}`, JSON.stringify(app.readState));
+        } catch (error) { console.warn('Read status could not be saved:', error); }
+      },
+
+      threadActivity: (sug) => Math.max(Number(sug.createdAt) || 0, ...(Array.isArray(sug.comments) ? sug.comments : []).map(c => Number(c.createdAt) || 0)),
+
+      unreadActivity: (sug) => {
+        const me = app.accountKey();
+        if (!me || sug.status === 'vetoed') { return null; }
+        const readAt = Number(app.readState[sug.id]) || 0;
+        const comments = Array.isArray(sug.comments) ? sug.comments : [];
+        const mine = comments.filter(c => c.accountKey === me);
+        const ownPost = (sug.authorAccountKey || (sug.authorMc || '').toLowerCase()) === me;
+        const joinedAt = ownPost ? Number(sug.createdAt) : Math.min(...mine.map(c => Number(c.createdAt)));
+        const replies = comments.filter(c => c.accountKey !== me && Number(c.createdAt) > Math.max(readAt, joinedAt));
+        if (replies.length) {
+          return { suggestion: sug, at: Math.max(...replies.map(c => Number(c.createdAt))), label: `${replies.length} new ${replies.length === 1 ? 'reply' : 'replies'} in your thread` };
+        }
+        if (!ownPost && sug.status === 'active' && Number(sug.createdAt) > readAt) {
+          return { suggestion: sug, at: Number(sug.createdAt), label: 'New suggestion' };
+        }
+        return null;
+      },
+
+      isUnread: (sug) => !!app.unreadActivity(sug),
+
+      renderNotifications: () => {
+        const items = app.suggestions.map(app.unreadActivity).filter(Boolean).sort((a,b) => b.at - a.at);
+        document.getElementById('notificationCount').textContent = items.length;
+        document.getElementById('notificationsButton').setAttribute('aria-label', `Notifications, ${items.length} unread`);
+        document.getElementById('notificationsFeed').innerHTML = items.length ? items.map(item => `<div class="data-box" style="margin-bottom:10px;"><div class="data-box-content"><strong>${app.escapeHtml(item.label)}</strong><p>${app.escapeHtml(item.suggestion.title)}</p><p class="meta-text">${app.escapeHtml(new Date(item.at).toLocaleString())}</p><button onclick="app.openThread('${item.suggestion.id}')">Open thread</button></div></div>`).join('') : '<p>You’re all caught up.</p>';
+      },
+
+      markAllRead: () => {
+        app.suggestions.forEach(sug => { app.readState[sug.id] = app.threadActivity(sug); });
+        app.saveReadState();
+        app.renderNotifications();
+      },
+
+      openThread: (id) => {
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug) { return; }
+        if (sug.status === 'vetoed') { return; }
+        app.threadId = id;
+        app.readState[id] = app.threadActivity(sug);
+        app.saveReadState();
+        app.renderNotifications();
+        app.navigate('thread-view');
+        const container = document.getElementById(`comments-${id}`);
+        if (container) { container.querySelectorAll('[data-extra-comment]').forEach(el => { el.style.display = 'block'; }); }
+        const toggle = document.getElementById(`comments-toggle-${id}`);
+        if (toggle) { toggle.dataset.expanded = 'true'; toggle.textContent = 'Show fewer comments'; }
+      },
+
+      renderThread: () => {
+        const sug = app.suggestions.find(s => s.id === app.threadId && s.status !== 'vetoed');
+        document.getElementById('threadFeed').innerHTML = sug ? app.renderBox(sug, 'thread') : '<p>This suggestion is no longer available.</p>';
+        const feed = document.getElementById('threadFeed');
+        feed.querySelectorAll('[data-extra-comment]').forEach(el => { el.style.display = 'block'; });
+        const toggle = feed.querySelector('[id^="comments-toggle-"]');
+        if (toggle) { toggle.dataset.expanded = 'true'; toggle.textContent = 'Show fewer comments'; }
+        app.updateTimers();
+      },
 
       playNavSound: () => {
         try {
@@ -737,8 +852,12 @@
         if (!view) {
           return;
         }
+        if (viewId !== 'thread-view') { document.getElementById('threadFeed').innerHTML = ''; }
+        if (viewId === 'thread-view') { document.getElementById('activeFeed').innerHTML = ''; }
         view.classList.add('active');
         app.playNavSound();
+        if (viewId === 'notifications-view') { app.renderNotifications(); }
+        if (viewId === 'thread-view') { app.renderThread(); }
         if (viewId === 'home-view') {
           app.renderHome();
         }
@@ -929,6 +1048,7 @@
         document.getElementById('navUserDisplay').innerText = discordHandle + (isAdmin ? ' (Admin)' : '');
         document.getElementById('adminNavBtn').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('minecraftRegistration').style.display = 'none';
+        app.loadReadState();
         app.listenToData();
         if (isAdmin) {
           app.listenToReports();
@@ -995,11 +1115,13 @@
             app.suggestions.push({ id: snapshotDoc.id, ...snapshotDoc.data() });
           });
 
+          app.renderNotifications();
           app.evaluateStatuses();
           app.syncModerationListeners();
 
           const activeView = document.querySelector('.content-area .view.active');
           if (activeView) {
+            if (activeView.id === 'thread-view') { app.renderThread(); }
             if (activeView.id === 'home-view') { app.renderHome(); }
             if (activeView.id === 'vote-view') { app.renderVote(); }
             if (activeView.id === 'my-suggestions-view') { app.renderMySuggestions(); }
@@ -1391,6 +1513,8 @@
         const title = document.getElementById('suggestTitle').value.trim();
         const body = document.getElementById('suggestBody').value.trim();
         const btn = document.getElementById('submitSuggestBtn');
+        const tags = app.selectedTags('suggestTags');
+        if (!tags) { return; }
 
         if (!title || !body) {
           app.msg('Input Error', 'Please provide both a title and description.');
@@ -1419,6 +1543,7 @@
             authorMc: app.userData.mcUsername,
             title,
             body,
+            tags,
             createdAt: now,
             upvotes: [],
             downvotes: [],
@@ -1442,6 +1567,7 @@
 
           document.getElementById('suggestTitle').value = '';
           document.getElementById('suggestBody').value = '';
+          app.setSelectedTags('suggestTags', []);
           await app.checkCooldown();
           app.navigate('home-view');
         } catch (error) {
@@ -1665,10 +1791,12 @@
         let html = `
                 <div class="data-box" style="margin-bottom:12px;">
                     <div class="data-box-header">
-                        <span>${app.escapeHtml(sug.title)}</span>
+                        <span>${app.escapeHtml(sug.title)}${app.isUnread(sug) ? '<span class="unread-badge">Unread</span>' : ''}</span>
                         <span class="status-badge status-${app.escapeHtml(sug.status)}">${app.escapeHtml(statusLabel)}</span>
                     </div>
                     <div class="data-box-content">
+                        <div>${app.tagsFor(sug).map(tag => `<span class="tag-badge">${app.escapeHtml(tag)}</span>`).join('')}</div>
+                        ${context !== 'thread' ? `<button style="margin-top:6px;" onclick="app.openThread('${sug.id}')">Open thread${app.isUnread(sug) ? ' (unread)' : ''}</button>` : ''}
                         <div class="meta-text">
                             ID: ${app.escapeHtml(sug.id.substring(0, 8))} | User: ${app.escapeHtml(sug.authorDiscord || 'Unknown')} | Submitted: ${app.escapeHtml(dateStr)}
                             ${isEdited ? ` | <a onclick="app.toggleHistory('${sug.id}')">[View Edit History]</a>` : ''}
@@ -1679,19 +1807,21 @@
             `;
 
         if (isEdited) {
-          html += `<table class="history-table" id="hist-${sug.id}"><tr><th>Timestamp</th><th>Old Title</th><th>Old Body</th></tr>`;
+          html += `<table class="history-table" id="hist-${sug.id}"><tr><th>Timestamp</th><th>Old Title</th><th>Old Body</th><th>Old Tags</th></tr>`;
           [...sug.editHistory].reverse().forEach(edit => {
-            html += `<tr><td>${app.escapeHtml(new Date(edit.editedAt).toLocaleString())}</td><td>${app.escapeHtml(edit.title)}</td><td>${app.escapeHtml(edit.body)}</td></tr>`;
+            html += `<tr><td>${app.escapeHtml(new Date(edit.editedAt).toLocaleString())}</td><td>${app.escapeHtml(edit.title)}</td><td>${app.escapeHtml(edit.body)}</td><td>${app.escapeHtml(app.tagsFor(edit).join(', '))}</td></tr>`;
           });
           html += `</table>`;
         }
 
-        if (context === 'vote' && sug.status === 'active') {
+        if ((context === 'vote' || context === 'thread') && sug.status === 'active') {
           const myUp = sug.upvotes?.includes(myKey) ? 'font-weight:bold;color:var(--aa-navy);' : '';
           const myDown = sug.downvotes?.includes(myKey) ? 'font-weight:bold;color:var(--aa-red);' : '';
           html += `<div class="vote-controls"><button style="${myUp}" onclick="app.toggleVote('${sug.id}', 'up')">Upvote (${up})</button> <button style="${myDown}" onclick="app.toggleVote('${sug.id}', 'down')">Downvote (${down})</button> <button onclick="app.openReportModal('${sug.id}')" title="Report this post" style="margin-left:4px;">⚑ Report</button></div>`;
+        }
+        if (context === 'vote' || context === 'thread') {
           const comments = Array.isArray(sug.comments) ? sug.comments : [];
-          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div style="padding:5px 0;border-bottom:1px dotted #bbb;${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong><span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div></div>`;
+          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div style="padding:5px 0;border-bottom:1px dotted #bbb;${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong><span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}${sug.status === 'active' ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div>` : '<p class="meta-text">Comments are closed.</p>'}</div>`;
         }
 
         if (context === 'admin' && app.userData?.isAdmin && sug.status === 'passed' && !finalized) {
@@ -1782,7 +1912,12 @@
         if (sortControl && sortControl.value !== app.voteSort) {
           sortControl.value = app.voteSort;
         }
-        const list = app.suggestions.filter(s => s.status === 'active');
+        const filter = document.getElementById('tagFilter');
+        const tags = app.tagOptions;
+        if (!tags.includes(app.voteTag)) { app.voteTag = ''; }
+        filter.innerHTML = '<option value="">All tags</option>' + tags.map(tag => `<option value="${app.escapeHtml(tag)}">${app.escapeHtml(tag)}</option>`).join('');
+        filter.value = app.voteTag;
+        const list = app.suggestions.filter(s => s.status === 'active' && (!app.voteTag || app.tagsFor(s).includes(app.voteTag)));
         list.sort((a, b) => {
           if (app.voteSort === 'oldest') {
             return Number(a.createdAt || 0) - Number(b.createdAt || 0);
@@ -1851,6 +1986,7 @@
         editId.value = id;
         editTitle.value = sug.title;
         editBody.value = sug.body;
+        app.setSelectedTags('editTags', app.tagsFor(sug));
         modal.style.display = 'flex';
       },
 
@@ -1863,16 +1999,18 @@
           return;
         }
 
-        if (sug.title === t && sug.body === b) {
+        const tags = app.selectedTags('editTags');
+        if (!tags) { return; }
+        if (sug.title === t && sug.body === b && JSON.stringify(tags) === JSON.stringify(app.tagsFor(sug))) {
           document.getElementById('editModal').style.display = 'none';
           return;
         }
 
         const newHist = [...(sug.editHistory || []),
-          { title: sug.title, body: sug.body, editedAt: Date.now() }];
+          { title: sug.title, body: sug.body, tags: app.tagsFor(sug), editedAt: Date.now() }];
         try {
           await updateDoc(doc(db, `artifacts/${appId}/public/data/suggestions`, id),
-            { title: t, body: b, editHistory: newHist });
+            { title: t, body: b, tags, editHistory: newHist });
           document.getElementById('editModal').style.display = 'none';
         } catch (error) {
           console.error('Edit failed:', error);
