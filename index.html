@@ -449,7 +449,7 @@
   <div id="app-wrapper" class="wrapper" style="display: none;">
     <div class="top-header">
       <h1>ACCS Suggestion Voting Portal</h1>
-      <span class="version-label">v0.0.12</span>
+      <span class="version-label">v0.0.13</span>
     </div>
     <div class="top-nav-bar">
       <button id="notificationsButton" onclick="app.navigate('notifications-view')" aria-label="Notifications, 0 unread">Notifications (<span id="notificationCount" aria-live="polite">0</span>)</button>
@@ -800,6 +800,13 @@
           app.currentUser = user;
           console.log("Firebase auth state:", user ? "Authenticated" : "Not authenticated");
         });
+        const requestedSuggestion = new URLSearchParams(window.location.search).get('suggestion');
+        try {
+          if (requestedSuggestion && /^[A-Za-z0-9]{20}$/.test(requestedSuggestion)) {
+            sessionStorage.setItem('accs-open-suggestion', requestedSuggestion);
+          }
+          app.pendingSuggestionId = sessionStorage.getItem('accs-open-suggestion');
+        } catch { app.pendingSuggestionId = requestedSuggestion; }
         app.handleDiscordCallback();
         window.addEventListener('popstate', app.playNavSound);
       },
@@ -1130,6 +1137,13 @@
             if (activeView.id === 'admin-reports-view') { app.renderReports(); }
             if (activeView.id === 'admin-deletion-history-view') { app.renderDeletionHistory(); }
             if (activeView.id === 'suggest-view') { app.checkCooldown(); }
+          }
+          if (app.pendingSuggestionId) {
+            const id = app.pendingSuggestionId;
+            app.pendingSuggestionId = null;
+            try { sessionStorage.removeItem('accs-open-suggestion'); } catch {}
+            if (app.suggestions.some(s => s.id === id && s.status !== 'vetoed')) app.openThread(id);
+            else app.msg('Suggestion Unavailable', 'This suggestion is no longer available.');
           }
         }, error => {
           console.error('Firestore listener failed:', error);
@@ -1570,6 +1584,7 @@
           app.setSelectedTags('suggestTags', []);
           await app.checkCooldown();
           app.navigate('home-view');
+          await app.announceSuggestion(docRef.id, true);
         } catch (error) {
           console.error('Suggestion submission failed:', error);
           app.msg('System Error', 'Failed to submit or record the cooldown. Please check your connection and try again.');
@@ -1579,6 +1594,30 @@
           } else if (btn) {
             btn.disabled = false;
           }
+        }
+      },
+
+      announceSuggestion: async (id, quiet = false) => {
+        const session = app.readSavedSession();
+        if (!session?.token || !auth.currentUser) {
+          app.msg('Suggestion Saved', 'Please sign in again, then use Share to Discord in My Suggestions.');
+          return false;
+        }
+        try {
+          const firebaseToken = await auth.currentUser.getIdToken();
+          const response = await fetch('https://accs-voting-api.peachworks001.workers.dev/suggestions/announce', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: session.token, firebaseToken, suggestionId: id }),
+            signal: AbortSignal.timeout(40000)
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.error || 'Discord announcement unavailable.');
+          if (!quiet) app.msg('Discord Announcement', result.state === 'sent' ? 'This suggestion has been shared to Discord.' : 'Your announcement is queued for delivery.');
+          return true;
+        } catch (error) {
+          console.warn('Discord announcement was not confirmed.');
+          app.msg('Suggestion Saved', 'Your suggestion is saved. Its Discord announcement could not be confirmed. Use Share to Discord in My Suggestions to check or retry. If the issue continues, contact an administrator.');
+          return false;
         }
       },
 
@@ -1858,7 +1897,7 @@
         }
 
         if (context === 'my' && sug.status === 'active') {
-          html += `<div class="vote-controls"><button onclick="app.openEditModal('${sug.id}')">Edit</button> <button onclick="app.deleteSuggestion('${sug.id}')">Delete</button></div>`;
+          html += `<div class="vote-controls"><button onclick="app.openEditModal('${sug.id}')">Edit</button> <button onclick="app.announceSuggestion('${sug.id}')">Share to Discord</button> <button onclick="app.deleteSuggestion('${sug.id}')">Delete</button></div>`;
         }
         html += `</div></div>`;
         return html;

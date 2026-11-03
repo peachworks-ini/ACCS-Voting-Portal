@@ -21,3 +21,7 @@ Copyright © 2026 peachworks. All rights reserved.
 - Discord integration is deferred; existing Discord sign-in is unchanged.
 
 Run feature checks with `node tests/features.test.mjs`. Live Firestore submission and permissions should be checked in a signed-in staging session before release; this repository does not include Firestore rules or the authentication worker.
+
+## v0.0.13
+
+Adds new-suggestion Discord announcements through the existing authentication Worker, 100-character embed previews, and direct View & Vote thread links. See `worker/README.md` for the D1 migration, secret, Cron Trigger, rollout order, and delivery limitations. The Worker configuration must be deployed before the frontend.
