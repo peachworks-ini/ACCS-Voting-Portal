@@ -439,7 +439,7 @@ async function registerUser(request, env) {
 const FIREBASE_PROJECT = 'accs-voting';
 const FIREBASE_PUBLIC_API_KEY = 'AIzaSyCvHwtJJJDF1fpQ2ipDOLRBPjUahhpfUn0';
 const ANNOUNCEMENT_GUILD = '1466505553042739363';
-const ANNOUNCEMENT_CHANNEL = '1566952692855742624';
+const ANNOUNCEMENT_CHANNEL = '1562476088163172423';
 const ALLOWED_TAGS = ['Quality of Life', 'Client-side', 'Building', 'Visuals', 'Adventure', 'Fun'];
 
 class AnnouncementError extends Error {
