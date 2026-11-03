@@ -1616,7 +1616,7 @@
           return true;
         } catch (error) {
           console.warn('Discord announcement was not confirmed.');
-          app.msg('Suggestion Saved', 'Your suggestion is saved. Its Discord announcement could not be confirmed. Use Share to Discord in My Suggestions to check or retry. If the issue continues, contact an administrator.');
+          app.msg('Suggestion Saved', 'Your suggestion is saved, but Discord sharing failed: ' + String(error?.message || 'Unknown error').slice(0, 250) + ' You can retry using Share to Discord in My Suggestions.');
           return false;
         }
       },
