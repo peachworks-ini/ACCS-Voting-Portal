@@ -614,9 +614,132 @@ export async function drainAnnouncements(env) {
   for (const row of rows.results || []) await deliverAnnouncement(row.suggestion_id, env);
 }
 
+// Admin review reminders use read-only server credentials, never browser sessions.
+const ADMIN_REVIEW_CHANNEL = '1497835434355720242';
+let reviewAccessToken = null;
+
+export function reviewReminderSlot(at = new Date()) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23'
+  }).formatToParts(at).map(part => [part.type, part.value]));
+  if (!['08', '20'].includes(parts.hour)) return null;
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}`;
+}
+
+function base64url(bytes) {
+  return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+export async function reviewFirestoreToken(env) {
+  if (reviewAccessToken && reviewAccessToken.until > Date.now() + 60000) return reviewAccessToken.token;
+  const account = JSON.parse(env.FIREBASE_REVIEW_SERVICE_ACCOUNT || '{}');
+  if (account.project_id !== FIREBASE_PROJECT || !account.client_email || !account.private_key) throw new Error('Configure the read-only FIREBASE_REVIEW_SERVICE_ACCOUNT secret.');
+  const encode = value => base64url(new TextEncoder().encode(JSON.stringify(value)));
+  const now = Math.floor(Date.now() / 1000);
+  const unsigned = encode({ alg: 'RS256', typ: 'JWT' }) + '.' + encode({
+    iss: account.client_email, scope: 'https://www.googleapis.com/auth/datastore',
+    aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600
+  });
+  const pem = account.private_key.replace(/-----[^-]+-----|\s/g, '');
+  const key = await crypto.subtle.importKey('pkcs8', Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned));
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: unsigned + '.' + base64url(new Uint8Array(signature)) }),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!response.ok) throw new Error(`Review credentials rejected: HTTP ${response.status}`);
+  const data = await response.json();
+  if (!data.access_token) throw new Error('Review credentials returned no access token.');
+  reviewAccessToken = { token: data.access_token, until: Date.now() + Number(data.expires_in || 3600) * 1000 };
+  return reviewAccessToken.token;
+}
+
+export async function loadPendingReviews(env) {
+  const token = await reviewFirestoreToken(env);
+  const pending = [];
+  let cursor;
+  for (let page = 0; page < 100; page++) {
+    const structuredQuery = {
+      select: { fields: ['title', 'status', 'reviewStatus', 'moderatorFinalizedAt', 'createdAt', 'reviewStartedAt', 'resolvedAt'].map(fieldPath => ({ fieldPath })) },
+      from: [{ collectionId: 'suggestions' }],
+      where: { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'passed' } } },
+      orderBy: [{ field: { fieldPath: '__name__' }, direction: 'ASCENDING' }], limit: 100,
+      ...(cursor ? { startAt: { values: [{ referenceValue: cursor }], before: false } } : {})
+    };
+    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/artifacts/accs-voting-portal/public/data:runQuery`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ structuredQuery }), signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) throw new Error(`Pending review read failed: HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Unexpected pending review response.');
+    const docs = data.filter(row => row.document).map(row => row.document);
+    for (const document of docs) {
+      const s = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+      if (s.status === 'passed' && s.reviewStatus !== 'finalized' && !s.moderatorFinalizedAt) pending.push({ id: document.name.split('/').at(-1), ...s });
+    }
+    if (docs.length < 100) return pending.sort((a,b) => Number(a.reviewStartedAt || a.resolvedAt || a.createdAt || 0) - Number(b.reviewStartedAt || b.resolvedAt || b.createdAt || 0));
+    const next = docs.at(-1).name;
+    if (next === cursor) throw new Error('Pending review pagination did not advance.');
+    cursor = next;
+  }
+  throw new Error('Pending review page limit exceeded; reminder not sent.');
+}
+
+export function reviewReminderPayload(slot, reviews) {
+  return {
+    allowed_mentions: { parse: [] }, nonce: `review-${slot.replace(/-/g, '')}`, enforce_nonce: true,
+    embeds: [{ color: 0x8064f4, title: '📋 Suggestions awaiting admin review',
+      description: `**${reviews.length} ${reviews.length === 1 ? 'suggestion needs' : 'suggestions need'} moderator review.**\n\n` +
+        reviews.slice(0, 10).map(s => `• ${discordText(s.title, 100)}`).join('\n') +
+        (reviews.length > 10 ? `\n\nAnd ${reviews.length - 10} more in Pending Reviews.` : ''),
+      footer: { text: 'ACCSVotePortal • 8 AM / 8 PM Pacific reminder' }
+    }],
+    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open Pending Reviews', url: FRONTEND_URL + '?view=admin-view' }] }]
+  };
+}
+
+export async function queueReviewReminder(env, at = new Date()) {
+  if (env.ADMIN_REVIEW_REMINDERS_ENABLED !== 'true') return;
+  const slot = reviewReminderSlot(at);
+  if (!slot) return;
+  if (!env.DISCORD_ANNOUNCEMENT_BOT_TOKEN || !env.FIREBASE_REVIEW_SERVICE_ACCOUNT) throw new Error('Admin review reminder secrets are missing.');
+  const id = `admin-review-${slot}`;
+  if (await env.DB.prepare('SELECT slot FROM admin_review_reminder_runs WHERE slot = ?').bind(slot).first()) return;
+  const reviews = await loadPendingReviews(env);
+  const now = Date.now();
+  if (!reviews.length) {
+    await env.DB.prepare('INSERT OR IGNORE INTO admin_review_reminder_runs(slot, checked_at, pending_count) VALUES (?, ?, 0)').bind(slot, now).run();
+    return;
+  }
+  const channel = await fetch(`https://discord.com/api/v10/channels/${ADMIN_REVIEW_CHANNEL}`, {
+    headers: { Authorization: `Bot ${env.DISCORD_ANNOUNCEMENT_BOT_TOKEN}` }, signal: AbortSignal.timeout(10000)
+  });
+  if (!channel.ok) throw new Error(`Admin reminder channel unavailable: HTTP ${channel.status}`);
+  const info = await channel.json();
+  if (info.guild_id !== ANNOUNCEMENT_GUILD || ![0, 5].includes(info.type)) throw new Error('Admin reminder channel is not in the configured server.');
+  const payload = JSON.stringify(reviewReminderPayload(slot, reviews));
+  await env.DB.batch([
+    env.DB.prepare(`INSERT OR IGNORE INTO discord_announcements
+      (suggestion_id, discord_id, channel_id, payload, state, created_at, updated_at, next_attempt_at)
+      VALUES (?, 'scheduled-admin-reminder', ?, ?, 'pending', ?, ?, ?)`)
+      .bind(id, ADMIN_REVIEW_CHANNEL, payload, now, now, now),
+    env.DB.prepare('INSERT OR IGNORE INTO admin_review_reminder_runs(slot, checked_at, pending_count) VALUES (?, ?, ?)').bind(slot, now, reviews.length)
+  ]);
+  await deliverAnnouncement(id, env);
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(drainAnnouncements(env));
+    ctx.waitUntil(Promise.allSettled([
+      drainAnnouncements(env),
+      queueReviewReminder(env, new Date(event.scheduledTime || Date.now()))
+    ]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') console.error(index === 0 ? 'Announcement queue check failed.' : 'Admin reminder check failed: ' + String(result.reason?.message || 'Unknown error'));
+      });
+    }));
   },
   async fetch(request, env) {
     const url = new URL(request.url);

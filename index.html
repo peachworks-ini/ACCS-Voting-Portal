@@ -800,7 +800,9 @@
           app.currentUser = user;
           console.log("Firebase auth state:", user ? "Authenticated" : "Not authenticated");
         });
-        const requestedSuggestion = new URLSearchParams(window.location.search).get('suggestion');
+        const params = new URLSearchParams(window.location.search);
+        const requestedSuggestion = params.get('suggestion');
+        try { if (params.get('view') === 'admin-view') sessionStorage.setItem('accs-open-admin-reviews', 'true'); } catch {}
         try {
           if (requestedSuggestion && /^[A-Za-z0-9]{20}$/.test(requestedSuggestion)) {
             sessionStorage.setItem('accs-open-suggestion', requestedSuggestion);
@@ -1061,7 +1063,9 @@
           app.listenToReports();
           app.listenToDeletionHistory();
         }
-        app.navigate('home-view');
+        let openAdminReviews = false;
+        try { openAdminReviews = sessionStorage.getItem('accs-open-admin-reviews') === 'true'; sessionStorage.removeItem('accs-open-admin-reviews'); } catch {}
+        app.navigate(openAdminReviews && isAdmin ? 'admin-view' : 'home-view');
       },
 
       logout: async () => {

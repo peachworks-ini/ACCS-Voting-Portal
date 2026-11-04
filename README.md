@@ -25,3 +25,7 @@ Run feature checks with `node tests/features.test.mjs`. Live Firestore submissio
 ## v0.0.13
 
 Adds new-suggestion Discord announcements through the existing authentication Worker, 100-character embed previews, and direct View & Vote thread links. See `worker/README.md` for the D1 migration, secret, Cron Trigger, rollout order, and delivery limitations. The Worker configuration must be deployed before the frontend.
+
+## Admin review reminders
+
+Adds optional private-admin-channel pending-review reminders at 8 AM and 8 PM America/Los_Angeles. Requires a read-only Firestore service-account secret and the new D1 reminder-run table; see `worker/ADMIN-REMINDERS.md`. The reminder's Pending Reviews link survives login and preserves existing admin access checks.
