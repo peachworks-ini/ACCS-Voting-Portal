@@ -751,6 +751,18 @@ export default {
       });
     }
 
+    if (request.method === "POST" && url.pathname === "/accounts/admins") {
+      try {
+        if (request.headers.get('Origin') !== API_ORIGIN) return json({ error: 'Origin not allowed.' }, 403);
+        const body = await request.json();
+        await announcementSession(body.token, env);
+        const rows = await env.DB.prepare('SELECT minecraft_username FROM users WHERE is_admin = 1').all();
+        return json({ accounts: (rows.results || []).map(user => String(user.minecraft_username || '').trim().toLowerCase()).filter(Boolean) });
+      } catch (error) {
+        return json({ error: 'Unable to load account roles.' }, error instanceof AnnouncementError ? error.status : 503);
+      }
+    }
+
     if (request.method === "POST" && url.pathname === "/suggestions/announce") {
       try { return await queueAnnouncement(request, env); }
       catch (error) {

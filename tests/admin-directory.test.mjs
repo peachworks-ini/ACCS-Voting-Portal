@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {webcrypto} from 'node:crypto';
+let valid=true;
+const DB={prepare(query){return {bind(){return this;},async first(){return valid?{discord_id:'member',minecraft_username:'Reader',is_admin:0}:null;},async all(){assert.ok(query.includes('WHERE is_admin = 1'));return {results:[{minecraft_username:'Admin_MC'}]};}};}};
+const context={crypto:webcrypto,TextEncoder,URL,Request,Response,Headers,console};vm.createContext(context);
+const source=readFileSync(new URL('../worker/index.mjs',import.meta.url),'utf8');
+vm.runInContext(source.replace('export default ','this.worker = ').replace(/export /g,''),context);
+const request=origin=>new Request('https://api.example/accounts/admins',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({token:'a'.repeat(64)})});
+let r=await context.worker.fetch(request('https://peachworks-ini.github.io'),{DB});
+assert.equal(r.status,200);assert.equal(JSON.stringify(await r.json()),JSON.stringify({accounts:['admin_mc']}));
+assert.equal((await context.worker.fetch(request('https://attacker.example'),{DB})).status,403);
+valid=false;assert.equal((await context.worker.fetch(request('https://peachworks-ini.github.io'),{DB})).status,401);
+console.log('Verified admin directory: authenticated access, canonical usernames, forbidden origin and invalid sessions.');

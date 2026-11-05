@@ -134,8 +134,14 @@
     }
 
     .tag-badge { display:inline-block; padding:2px 6px; margin:4px 4px 0 0; border:1px solid #888; background:#eef; color:var(--aa-navy); font-size:11px; }
-    .unread-badge { color:#a00000; font-weight:bold; margin-left:8px; }
+    .unread-badge { color:#553900; background:#fff2b3; font-weight:bold; margin-left:8px; padding:1px 4px; }
+    .unread-badge:empty { display:none; }
     .top-nav-bar { flex-wrap:wrap; align-items:center; }
+
+    .member-surface, .data-box-content.member-surface { background:#f7f7f7; }
+    .admin-surface, .data-box-content.admin-surface { background:#e4f2ff; }
+    .admin-label { color:#c00000; font-weight:bold; margin-left:6px; font-size:11px; }
+    .comment-card { padding:8px; margin:6px 0; border:1px solid #ccc; }
 
     .main-container {
       display: flex;
@@ -449,7 +455,7 @@
   <div id="app-wrapper" class="wrapper" style="display: none;">
     <div class="top-header">
       <h1>ACCS Suggestion Voting Portal</h1>
-      <span class="version-label">v0.0.13</span>
+      <span class="version-label">v0.0.14</span>
     </div>
     <div class="top-nav-bar">
       <button id="notificationsButton" onclick="app.navigate('notifications-view')" aria-label="Notifications, 0 unread">Notifications (<span id="notificationCount" aria-live="polite">0</span>)</button>
@@ -675,6 +681,9 @@
       voteSort: 'latest',
       voteTag: '',
       readState: {},
+      seenComments: {},
+      visibleReadItems: new Map(),
+      adminAccounts: new Set(),
       threadId: null,
       unsubSuggestions: null,
       unsubReports: null,
@@ -708,17 +717,112 @@
         });
       },
 
+      commentReadKey: (comment, index) => `${Number(comment.createdAt) || 0}:${index}`,
+
+      isAdminAccount: (key) => app.adminAccounts.has(String(key || '').trim().toLowerCase()),
+
+      adminLabel: (key) => `<span class="admin-label"${app.isAdminAccount(key) ? '' : ' hidden'}>ADMIN</span>`,
+
+      loadAdminAccounts: async () => {
+        const account = app.accountKey();
+        const session = app.readSavedSession();
+        if (!session?.token) return;
+        try {
+          const response = await fetch('https://accs-voting-api.peachworks001.workers.dev/accounts/admins', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: session.token }), signal: AbortSignal.timeout(10000)
+          });
+          if (!response.ok) throw new Error('Admin directory unavailable');
+          const result = await response.json();
+          if (!Array.isArray(result.accounts)) throw new Error('Invalid admin directory');
+          if (!app.userData || account !== app.accountKey()) return;
+          app.adminAccounts = new Set(result.accounts.filter(key => typeof key === 'string').map(key => key.trim().toLowerCase()));
+          if (app.userData.isAdmin) app.adminAccounts.add(account);
+          document.querySelectorAll('[data-role-account]').forEach(el => {
+            const admin = app.isAdminAccount(el.dataset.roleAccount);
+            el.classList.toggle('admin-surface', admin);
+            el.classList.toggle('member-surface', !admin);
+            const label = el.querySelector('.admin-label');
+            if (label) label.hidden = !admin;
+          });
+        } catch { console.warn('Admin styling directory could not be loaded.'); }
+      },
+
+      markVisibleItemRead: (id, kind, index) => {
+        const sug = app.suggestions.find(s => s.id === id);
+        if (!sug) return false;
+        if (kind === 'post') {
+          if (Number(app.readState[id] || 0) >= Number(sug.createdAt || 0)) return false;
+          app.readState[id] = Number(sug.createdAt || 0);
+          return true;
+        }
+        const comment = sug.comments?.[index];
+        if (!comment || Number(app.readState[id] || 0) >= Number(comment.createdAt || 0)) return false;
+        const key = app.commentReadKey(comment, index);
+        const seen = Array.isArray(app.seenComments[id]) ? app.seenComments[id] : [];
+        if (seen.includes(key)) return false;
+        app.seenComments[id] = [...seen, key];
+        return true;
+      },
+
+      refreshUnreadBadges: () => {
+        document.querySelectorAll('[data-unread-suggestion]').forEach(el => {
+          const sug = app.suggestions.find(s => s.id === el.dataset.unreadSuggestion);
+          el.textContent = sug ? app.unreadActivity(sug)?.label || '' : '';
+        });
+      },
+
+      readItemIsVisible: (el) => {
+        if (!el.isConnected || !el.getClientRects().length) return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        let top = 0, left = 0, right = window.innerWidth, bottom = window.innerHeight;
+        for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+          const style = getComputedStyle(parent);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          const box = parent.getBoundingClientRect();
+          if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) { top = Math.max(top, box.top); bottom = Math.min(bottom, box.bottom); }
+          if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) { left = Math.max(left, box.left); right = Math.min(right, box.right); }
+        }
+        const height = Math.max(0, Math.min(rect.bottom, bottom) - Math.max(rect.top, top));
+        const width = Math.max(0, Math.min(rect.right, right) - Math.max(rect.left, left));
+        return height >= Math.min(rect.height, Math.max(0, bottom - top)) * 0.6 && height > 0 && width >= rect.width * 0.6;
+      },
+
+      scanVisibleReadItems: (now = performance.now()) => {
+        if (!app.userData || document.visibilityState !== 'visible' || !document.hasFocus() || document.getElementById('app-wrapper').style.display === 'none' || document.querySelector('.modal-bg[style*="display: flex"]')) {
+          app.visibleReadItems.clear(); return;
+        }
+        const visible = new Set();
+        let changed = false;
+        document.querySelectorAll('.content-area .view.active [data-read-kind]').forEach(el => {
+          if (!app.readItemIsVisible(el)) return;
+          visible.add(el);
+          if (!app.visibleReadItems.has(el)) app.visibleReadItems.set(el, now);
+          if (now - app.visibleReadItems.get(el) >= 2000) {
+            changed = app.markVisibleItemRead(el.dataset.readSuggestion, el.dataset.readKind, Number(el.dataset.readComment)) || changed;
+          }
+        });
+        for (const el of app.visibleReadItems.keys()) if (!visible.has(el)) app.visibleReadItems.delete(el);
+        if (changed) { app.saveReadState(); app.refreshUnreadBadges(); app.renderNotifications(); }
+      },
+
       loadReadState: () => {
         app.readState = {};
+        app.seenComments = {};
+        app.visibleReadItems.clear();
         try {
           const saved = JSON.parse(localStorage.getItem(`accs-read-v1:${app.accountKey()}`) || '{}');
           if (saved && typeof saved === 'object' && !Array.isArray(saved)) { app.readState = saved; }
+          const items = JSON.parse(localStorage.getItem(`accs-read-comments-v2:${app.accountKey()}`) || '{}');
+          if (items && typeof items === 'object' && !Array.isArray(items)) app.seenComments = items;
         } catch (error) { console.warn('Read status could not be loaded:', error); }
       },
 
       saveReadState: () => {
         try {
           localStorage.setItem(`accs-read-v1:${app.accountKey()}`, JSON.stringify(app.readState));
+          localStorage.setItem(`accs-read-comments-v2:${app.accountKey()}`, JSON.stringify(app.seenComments));
         } catch (error) { console.warn('Read status could not be saved:', error); }
       },
 
@@ -732,7 +836,7 @@
         const mine = comments.filter(c => c.accountKey === me);
         const ownPost = (sug.authorAccountKey || (sug.authorMc || '').toLowerCase()) === me;
         const joinedAt = ownPost ? Number(sug.createdAt) : Math.min(...mine.map(c => Number(c.createdAt)));
-        const replies = comments.filter(c => c.accountKey !== me && Number(c.createdAt) > Math.max(readAt, joinedAt));
+        const replies = comments.filter((c, index) => c.accountKey !== me && Number(c.createdAt) > Math.max(readAt, joinedAt) && !(Array.isArray(app.seenComments[sug.id]) && app.seenComments[sug.id].includes(app.commentReadKey(c, index))));
         if (replies.length) {
           return { suggestion: sug, at: Math.max(...replies.map(c => Number(c.createdAt))), label: `${replies.length} new ${replies.length === 1 ? 'reply' : 'replies'} in your thread` };
         }
@@ -755,6 +859,7 @@
         app.suggestions.forEach(sug => { app.readState[sug.id] = app.threadActivity(sug); });
         app.saveReadState();
         app.renderNotifications();
+        app.refreshUnreadBadges();
       },
 
       openThread: (id) => {
@@ -762,8 +867,6 @@
         if (!sug) { return; }
         if (sug.status === 'vetoed') { return; }
         app.threadId = id;
-        app.readState[id] = app.threadActivity(sug);
-        app.saveReadState();
         app.renderNotifications();
         app.navigate('thread-view');
         const container = document.getElementById(`comments-${id}`);
@@ -856,6 +959,7 @@
       },
 
       navigate: (viewId) => {
+        app.visibleReadItems.clear();
         document.querySelectorAll('.content-area .view').forEach(v => v.classList.remove('active'));
         const view = document.getElementById(viewId);
         if (!view) {
@@ -1057,7 +1161,10 @@
         document.getElementById('navUserDisplay').innerText = discordHandle + (isAdmin ? ' (Admin)' : '');
         document.getElementById('adminNavBtn').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('minecraftRegistration').style.display = 'none';
+        app.adminAccounts = new Set();
+        if (isAdmin) app.adminAccounts.add(app.accountKey());
         app.loadReadState();
+        void app.loadAdminAccounts();
         app.listenToData();
         if (isAdmin) {
           app.listenToReports();
@@ -1084,6 +1191,10 @@
           console.warn('Firebase sign-out failed:', error);
         }
         app.userData = null;
+        app.adminAccounts.clear();
+        app.visibleReadItems.clear();
+        app.readState = {};
+        app.seenComments = {};
         if (app.unsubSuggestions) {
           app.unsubSuggestions();
           app.unsubSuggestions = null;
@@ -1834,17 +1945,17 @@
         let html = `
                 <div class="data-box" style="margin-bottom:12px;">
                     <div class="data-box-header">
-                        <span>${app.escapeHtml(sug.title)}${app.isUnread(sug) ? '<span class="unread-badge">Unread</span>' : ''}</span>
+                        <span>${app.escapeHtml(sug.title)}<span class="unread-badge" data-unread-suggestion="${sug.id}">${app.unreadActivity(sug)?.label || ''}</span></span>
                         <span class="status-badge status-${app.escapeHtml(sug.status)}">${app.escapeHtml(statusLabel)}</span>
                     </div>
-                    <div class="data-box-content">
+                    <div class="data-box-content ${app.isAdminAccount(sug.authorAccountKey || sug.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(sug.authorAccountKey || sug.authorMc || '')}">
                         <div>${app.tagsFor(sug).map(tag => `<span class="tag-badge">${app.escapeHtml(tag)}</span>`).join('')}</div>
-                        ${context !== 'thread' ? `<button style="margin-top:6px;" onclick="app.openThread('${sug.id}')">Open thread${app.isUnread(sug) ? ' (unread)' : ''}</button>` : ''}
+                        ${context !== 'thread' ? `<button style="margin-top:6px;" onclick="app.openThread('${sug.id}')">Open thread</button>` : ''}
                         <div class="meta-text">
-                            ID: ${app.escapeHtml(sug.id.substring(0, 8))} | User: ${app.escapeHtml(sug.authorDiscord || 'Unknown')} | Submitted: ${app.escapeHtml(dateStr)}
+                            ID: ${app.escapeHtml(sug.id.substring(0, 8))} | User: ${app.escapeHtml(sug.authorDiscord || 'Unknown')}${app.adminLabel(sug.authorAccountKey || sug.authorMc)} | Submitted: ${app.escapeHtml(dateStr)}
                             ${isEdited ? ` | <a onclick="app.toggleHistory('${sug.id}')">[View Edit History]</a>` : ''}
                         </div>
-                        <div style="margin-top:5px;white-space:pre-wrap;">${app.escapeHtml(sug.body)}</div>
+                        <div data-read-kind="post" data-read-suggestion="${sug.id}" style="margin-top:5px;white-space:pre-wrap;">${app.escapeHtml(sug.body)}</div>
                         ${sug.status === 'active' ? `<div style="margin-top:8px;font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt || 0) + PASS_TIME_MS}"></div>` : ''}
                         ${sug.status !== 'active' ? `<div style="margin-top:10px;padding:8px;background:#f1f1f1;border:1px solid #aaa;"><strong>Community result:</strong> ${app.escapeHtml(sug.communityVerdict || (communityDenied ? 'COMMUNITY DENIED' : 'COMMUNITY APPROVED'))}<br><span>Upvotes: ${up} | Downvotes: ${down}</span><br><span class="meta-text">A decisive result requires at least 5 votes and 60% for one side.</span></div>` : ''}
             `;
@@ -1864,7 +1975,7 @@
         }
         if (context === 'vote' || context === 'thread') {
           const comments = Array.isArray(sug.comments) ? sug.comments : [];
-          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div style="padding:5px 0;border-bottom:1px dotted #bbb;${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong><span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}${sug.status === 'active' ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div>` : '<p class="meta-text">Comments are closed.</p>'}</div>`;
+          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div class="comment-card ${app.isAdminAccount(comment.accountKey || comment.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(comment.accountKey || comment.authorMc || '')}" data-read-kind="comment" data-read-suggestion="${sug.id}" data-read-comment="${index}" style="${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong>${app.adminLabel(comment.accountKey || comment.authorMc)}<span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}${sug.status === 'active' ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div>` : '<p class="meta-text">Comments are closed.</p>'}</div>`;
         }
 
         if (context === 'admin' && app.userData?.isAdmin && sug.status === 'passed' && !finalized) {
@@ -1935,6 +2046,7 @@
       },
 
       toggleComments: (sugId) => {
+        app.visibleReadItems.clear();
         const container = document.getElementById(`comments-${sugId}`);
         const button = document.getElementById(`comments-toggle-${sugId}`);
         if (!container || !button) {
@@ -2094,6 +2206,9 @@
 
     const app = window.app;
     window.setInterval(() => app.updateTimers(), 1000);
+    window.setInterval(() => app.scanVisibleReadItems(), 250);
+    document.addEventListener('visibilitychange', () => app.visibleReadItems.clear());
+    window.addEventListener('blur', () => app.visibleReadItems.clear());
     document.querySelectorAll('input[name="reportReason"]').forEach(input => input.addEventListener('change', () => {
       const selected = document.querySelector('input[name="reportReason"]:checked');
       document.getElementById('reportOtherWrap').style.display = selected?.value === 'Other' ? 'block' : 'none';
