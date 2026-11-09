@@ -6,8 +6,8 @@
   <title>ACCS Suggestion Voting Portal</title>
   <style>
     :root {
-      --aa-navy: #000080;
-      --aa-light-blue: #87ceeb;
+      --aa-navy: #00007c;
+      --aa-light-blue: #e4f2ff;
       --aa-red: #ff0000;
       --aa-gray-bg: #e0e0e0;
       --aa-border: #666666;
@@ -86,23 +86,28 @@
     }
 
     .top-header {
-      background-color: #ffffff;
-      padding: 10px;
+      position: relative;
+      flex-shrink: 0;
+      height: auto;
+      min-height: 54px;
+      aspect-ratio: 4420 / 324;
+      background: #b4cffa;
       border-bottom: 2px solid var(--aa-navy);
-      display: flex;
-      align-items: center;
+      overflow: hidden;
     }
 
-    .top-header h1 {
-      color: var(--aa-navy);
-      font-size: 24px;
-      font-weight: bold;
-      font-style: italic;
-      letter-spacing: -1px;
+    .header-banner {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left center;
     }
 
     .version-label {
-      margin-left: auto;
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
       font-size: 12px;
       font-weight: bold;
       font-style: normal;
@@ -155,18 +160,32 @@
       min-height: 100%;
     }
 
-    .sidebar-item {
+    .sidebar-item, .sidebar-item:visited {
+      position: relative;
       display: block;
-      padding: 6px 10px;
-      color: #ffffff;
+      padding: 6px 22px 6px 10px;
+      color: var(--aa-navy);
+      background-color: var(--aa-light-blue);
       text-decoration: none;
       font-weight: bold;
-      border-bottom: 1px solid #333399;
+      border-bottom: 1px solid var(--aa-navy);
       cursor: pointer;
     }
 
-    .sidebar-item:hover {
-      background-color: #333399;
+    .sidebar-item::after {
+      content: "";
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 5px solid var(--aa-navy);
+      pointer-events: none;
+    }
+
+    .sidebar-item:hover, .sidebar-item:focus-visible {
+      background-color: #cddff6;
       text-decoration: underline;
     }
 
@@ -410,7 +429,7 @@
 
   <div id="login-view" class="view active">
     <div class="top-header" style="width: 100%; justify-content: flex-start; margin-bottom: auto;">
-      <h1>ACCS Suggestion Voting Portal</h1>
+      <img class="header-banner" src="assets/header.png" width="4420" height="400" alt="A Crazy Cobblemon Server — Voting Portal">
     </div>
     
     <div class="login-box-wrapper">
@@ -454,8 +473,8 @@
 
   <div id="app-wrapper" class="wrapper" style="display: none;">
     <div class="top-header">
-      <h1>ACCS Suggestion Voting Portal</h1>
-      <span class="version-label">v0.0.14</span>
+      <img class="header-banner" src="assets/header.png" width="4420" height="400" alt="A Crazy Cobblemon Server — Voting Portal">
+      <span class="version-label">v0.0.14a</span>
     </div>
     <div class="top-nav-bar">
       <button id="notificationsButton" onclick="app.navigate('notifications-view')" aria-label="Notifications, 0 unread">Notifications (<span id="notificationCount" aria-live="polite">0</span>)</button>
