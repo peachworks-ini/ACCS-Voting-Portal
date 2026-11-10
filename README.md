@@ -26,6 +26,16 @@ Run feature checks with `node tests/features.test.mjs`. Live Firestore submissio
 
 Adds new-suggestion Discord announcements through the existing authentication Worker, 100-character embed previews, and direct View & Vote thread links. See `worker/README.md` for the D1 migration, secret, Cron Trigger, rollout order, and delivery limitations. The Worker configuration must be deployed before the frontend.
 
-## Admin review reminders
-
 Adds optional private-admin-channel pending-review reminders at 8 AM and 8 PM America/Los_Angeles. Requires a read-only Firestore service-account secret and the new D1 reminder-run table; see `worker/ADMIN-REMINDERS.md`. The reminder's Pending Reviews link survives login and preserves existing admin access checks.
+
+## v0.0.14
+
+Added light blue background differentiators for admin posts/comments. Regular members are in light gray. ADMIN labels are now in red. Visible content is automatically marked red after viewing in an active tab.
+
+## v0.0.14a
+
+Added a new banner, finally. Refined the color of the navy color, and changed sidebar buttons to a light blue.
+
+## v0.0.14b
+
+Simplified the home cards to show only titles and final verdicts, and stylized them with inspiration from classic AA.com design. Added red GO buttons to entice navigation, and added differentiation between fonts by including Tahoma, with Verdana fallback for buttons, dropdowns, and status badges. Menu heading has been removed from sidebar. Web links are clickable. Site is now left-orientated with a 3:2 proportion. RSS is being experimented on, and sitemap + FAQ will be considered for v0.0.15.
