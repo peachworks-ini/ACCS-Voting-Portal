@@ -11,6 +11,8 @@
       --aa-red: #ff0000;
       --aa-gray-bg: #e0e0e0;
       --aa-border: #666666;
+      --site-width: 1200px;
+      --site-min-height: min(800px, 66.6667vw);
     }
 
     * {
@@ -33,6 +35,8 @@
       text-decoration: underline;
       cursor: pointer;
     }
+
+    .data-box-content a { overflow-wrap:anywhere; }
 
     a:visited {
       color: #551a8b;
@@ -79,10 +83,16 @@
       font-size: 11px;
     }
 
+    .wrapper, #login-view {
+      width: min(100%, var(--site-width));
+      margin-left: 0;
+      margin-right: auto;
+      min-height: var(--site-min-height);
+    }
+
     .wrapper {
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
     }
 
     .top-header {
@@ -138,6 +148,52 @@
       text-decoration: underline;
     }
 
+    button, select, option, .status-badge {
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+
+    .summary-card {
+      min-width: 0;
+      border: 1px solid var(--aa-navy);
+      border-left: 0;
+      margin: 12px 0 18px;
+      padding: 10px 12px 10px 0;
+    }
+
+    .summary-card > div { padding-left: 10px; }
+
+    .summary-card legend {
+      max-width: 100%;
+      padding: 0 8px 0 0;
+      color: var(--aa-navy);
+      font-size: 16px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-actions { margin-top: 10px; text-align: right; }
+
+    .aa-go {
+      display: inline-block;
+      background: #e00000;
+      color: #ffffff;
+      border: 2px solid;
+      border-top-color: #ffb3b3;
+      border-left-color: #ffb3b3;
+      border-right-color: #760000;
+      border-bottom-color: #760000;
+      padding: 0 3px;
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+      font-size: 13px;
+      line-height: 17px;
+      font-weight: bold;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+    .aa-go:hover { background: #c00000; }
+    .aa-go:focus-visible { outline: 2px solid var(--aa-navy); outline-offset: 2px; }
+    .aa-go:active { padding: 0 3px; border-color: #760000 #ffb3b3 #ffb3b3 #760000; }
+
     .tag-badge { display:inline-block; padding:2px 6px; margin:4px 4px 0 0; border:1px solid #888; background:#eef; color:var(--aa-navy); font-size:11px; }
     .unread-badge { color:#553900; background:#fff2b3; font-weight:bold; margin-left:8px; padding:1px 4px; }
     .unread-badge:empty { display:none; }
@@ -155,6 +211,7 @@
 
     .sidebar {
       width: 180px;
+      flex-shrink: 0;
       background-color: var(--aa-navy);
       color: #ffffff;
       min-height: 100%;
@@ -191,6 +248,7 @@
 
     .content-area {
       flex: 1;
+      min-width: 0;
       padding: 15px;
     }
 
@@ -204,7 +262,7 @@
 
     #login-view {
       background-image: linear-gradient(to bottom, #f0f0f0 0%, #ffffff 100%);
-      height: 100vh;
+      height: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -418,7 +476,7 @@
       background-color: #ffffff;
       width: 100%;
       padding: 10px 15px;
-      text-align: left;
+      text-align: center;
       color: #555555;
       margin-top: auto;
     }
@@ -474,7 +532,7 @@
   <div id="app-wrapper" class="wrapper" style="display: none;">
     <div class="top-header">
       <img class="header-banner" src="assets/header.png" width="4420" height="400" alt="A Crazy Cobblemon Server — Voting Portal">
-      <span class="version-label">v0.0.14a</span>
+      <span class="version-label">v0.0.14b</span>
     </div>
     <div class="top-nav-bar">
       <button id="notificationsButton" onclick="app.navigate('notifications-view')" aria-label="Notifications, 0 unread">Notifications (<span id="notificationCount" aria-live="polite">0</span>)</button>
@@ -484,17 +542,16 @@
     
     <div class="main-container">
       <div class="sidebar">
-        <div style="padding: 10px; color: #87ceeb; font-weight: bold;">Menu</div>
         <a class="sidebar-item" onclick="app.navigate('home-view')">Home</a>
         <a class="sidebar-item" onclick="app.navigate('vote-view')">Suggestion Vote</a>
         <a class="sidebar-item" onclick="app.navigate('suggest-view')">Submit Suggestion</a>
         <a class="sidebar-item" onclick="app.navigate('my-suggestions-view')">My Suggestions</a>
         <div id="adminNavBtn" style="display:none;">
           <div style="padding:10px 10px 6px;color:var(--aa-red);font-weight:bold;border-top:1px solid #aaa;margin-top:8px;">Admin Tools</div>
-          <a class="sidebar-item" style="padding-left:24px;" id="adminPendingNavBtn" onclick="app.navigate('admin-view')">↳ Pending Reviews</a>
-          <a class="sidebar-item" style="padding-left:24px;" id="adminReportsNavBtn" onclick="app.navigate('admin-reports-view')">↳ Reports (<span id="adminReportCount">0</span>)</a>
-          <a class="sidebar-item" style="padding-left:24px;" id="adminPostModerationNavBtn" onclick="app.navigate('admin-moderation-view')">↳ Post Moderation</a>
-          <a class="sidebar-item" style="padding-left:24px;" id="adminDeletionHistoryNavBtn" onclick="app.navigate('admin-deletion-history-view')">↳ Post Deletion History</a>
+          <a class="sidebar-item" id="adminPendingNavBtn" onclick="app.navigate('admin-view')">Pending Reviews</a>
+          <a class="sidebar-item" id="adminReportsNavBtn" onclick="app.navigate('admin-reports-view')">Reports (<span id="adminReportCount">0</span>)</a>
+          <a class="sidebar-item" id="adminPostModerationNavBtn" onclick="app.navigate('admin-moderation-view')">Post Moderation</a>
+          <a class="sidebar-item" id="adminDeletionHistoryNavBtn" onclick="app.navigate('admin-deletion-history-view')">Post Deletion History</a>
         </div>
       </div>
 
@@ -528,7 +585,7 @@
           <button onclick="app.markAllRead()">Mark all as read</button>
           <div id="notificationsFeed" style="margin-top:12px;"></div>
         </div>
-        <div id="thread-view" class="view"><button onclick="app.navigate('notifications-view')">Back to notifications</button><div id="threadFeed" style="margin-top:12px;"></div></div>
+        <div id="thread-view" class="view"><button id="threadBackButton" onclick="app.navigate(app.threadReturnView || 'vote-view')">Back</button><div id="threadFeed" style="margin-top:12px;"></div></div>
 
         <div id="suggest-view" class="view">
           <div class="data-box" style="max-width: 600px;">
@@ -871,7 +928,7 @@
         const items = app.suggestions.map(app.unreadActivity).filter(Boolean).sort((a,b) => b.at - a.at);
         document.getElementById('notificationCount').textContent = items.length;
         document.getElementById('notificationsButton').setAttribute('aria-label', `Notifications, ${items.length} unread`);
-        document.getElementById('notificationsFeed').innerHTML = items.length ? items.map(item => `<div class="data-box" style="margin-bottom:10px;"><div class="data-box-content"><strong>${app.escapeHtml(item.label)}</strong><p>${app.escapeHtml(item.suggestion.title)}</p><p class="meta-text">${app.escapeHtml(new Date(item.at).toLocaleString())}</p><button onclick="app.openThread('${item.suggestion.id}')">Open thread</button></div></div>`).join('') : '<p>You’re all caught up.</p>';
+        document.getElementById('notificationsFeed').innerHTML = items.length ? items.map(item => `<div class="data-box" style="margin-bottom:10px;"><div class="data-box-content"><strong>${app.escapeHtml(item.label)}</strong><p>${app.escapeHtml(item.suggestion.title)}</p><p class="meta-text">${app.escapeHtml(new Date(item.at).toLocaleString())}</p>${app.threadGoButton(item.suggestion.id, item.suggestion.title)}</div></div>`).join('') : '<p>You’re all caught up.</p>';
       },
 
       markAllRead: () => {
@@ -885,6 +942,8 @@
         const sug = app.suggestions.find(s => s.id === id);
         if (!sug) { return; }
         if (sug.status === 'vetoed') { return; }
+        app.threadReturnView = document.querySelector('.content-area .view.active')?.id || 'vote-view';
+        if (app.threadReturnView === 'thread-view') app.threadReturnView = 'vote-view';
         app.threadId = id;
         app.renderNotifications();
         app.navigate('thread-view');
@@ -895,6 +954,8 @@
       },
 
       renderThread: () => {
+        const labels = { 'home-view': 'Home', 'vote-view': 'Suggestion Vote', 'my-suggestions-view': 'My Suggestions', 'notifications-view': 'Notifications' };
+        document.getElementById('threadBackButton').textContent = 'Back to ' + (labels[app.threadReturnView] || 'Suggestion Vote');
         const sug = app.suggestions.find(s => s.id === app.threadId && s.status !== 'vetoed');
         document.getElementById('threadFeed').innerHTML = sug ? app.renderBox(sug, 'thread') : '<p>This suggestion is no longer available.</p>';
         const feed = document.getElementById('threadFeed');
@@ -1943,6 +2004,8 @@
         }
       },
 
+      threadGoButton: (id, title) => `<button class="aa-go" onclick="app.openThread('${id}')" aria-label="Open thread: ${app.escapeHtml(title || 'Suggestion')}" title="Open full thread">GO</button>`,
+
       renderBox: (sug, context) => {
         const up = sug.upvotes?.length || 0;
         const down = sug.downvotes?.length || 0;
@@ -1959,8 +2022,11 @@
         const myVote = privateReview.moderatorVotes?.[myKey];
         const notes = Array.isArray(context === 'admin' ? privateReview.moderatorNotes : sug.publishedModeratorNotes) ? [...(context === 'admin' ? privateReview.moderatorNotes : sug.publishedModeratorNotes)].sort((a,b) => Number(a.createdAt || 0) - Number(b.createdAt || 0)) : [];
         const myNote = notes.find(n => n.authorKey === myKey);
-        const publicResult = context === 'home' && !communityDenied && finalized;
         const statusLabel = communityDenied ? 'COMMUNITY DENIED' : (finalized ? `MODERATOR ${String(sug.moderatorVerdict || sug.verdict || 'UNDECIDED').toUpperCase()}` : (sug.status === 'active' ? 'ACTIVE' : 'PENDING REVIEW'));
+        if (context === 'home') {
+          const verdict = communityDenied ? 'Final outcome: COMMUNITY DENIED' : 'Final moderator verdict: ' + String(sug.moderatorVerdict || sug.verdict || 'UNDECIDED').toUpperCase();
+          return `<fieldset class="summary-card ${app.isAdminAccount(sug.authorAccountKey || sug.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(sug.authorAccountKey || sug.authorMc || '')}"><legend>${app.escapeHtml(sug.title)}</legend><div><strong>${app.escapeHtml(verdict)}</strong></div><div class="summary-actions">${app.threadGoButton(sug.id, sug.title)}</div></fieldset>`;
+        }
         let html = `
                 <div class="data-box" style="margin-bottom:12px;">
                     <div class="data-box-header">
@@ -1969,20 +2035,20 @@
                     </div>
                     <div class="data-box-content ${app.isAdminAccount(sug.authorAccountKey || sug.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(sug.authorAccountKey || sug.authorMc || '')}">
                         <div>${app.tagsFor(sug).map(tag => `<span class="tag-badge">${app.escapeHtml(tag)}</span>`).join('')}</div>
-                        ${context !== 'thread' ? `<button style="margin-top:6px;" onclick="app.openThread('${sug.id}')">Open thread</button>` : ''}
+                        ${context !== 'thread' && sug.status !== 'active' ? `<div style="margin-top:6px;">${app.threadGoButton(sug.id, sug.title)}</div>` : ''}
                         <div class="meta-text">
                             ID: ${app.escapeHtml(sug.id.substring(0, 8))} | User: ${app.escapeHtml(sug.authorDiscord || 'Unknown')}${app.adminLabel(sug.authorAccountKey || sug.authorMc)} | Submitted: ${app.escapeHtml(dateStr)}
                             ${isEdited ? ` | <a onclick="app.toggleHistory('${sug.id}')">[View Edit History]</a>` : ''}
                         </div>
-                        <div data-read-kind="post" data-read-suggestion="${sug.id}" style="margin-top:5px;white-space:pre-wrap;">${app.escapeHtml(sug.body)}</div>
-                        ${sug.status === 'active' ? `<div style="margin-top:8px;font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt || 0) + PASS_TIME_MS}"></div>` : ''}
+                        <div data-read-kind="post" data-read-suggestion="${sug.id}" style="margin-top:5px;white-space:pre-wrap;">${app.linkify(sug.body)}</div>
+                        ${sug.status === 'active' ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px;"><span style="font-weight:bold;color:var(--aa-navy);" data-deadline="${Number(sug.createdAt || 0) + PASS_TIME_MS}"></span>${context !== 'thread' ? app.threadGoButton(sug.id, sug.title) : ''}</div>` : ''}
                         ${sug.status !== 'active' ? `<div style="margin-top:10px;padding:8px;background:#f1f1f1;border:1px solid #aaa;"><strong>Community result:</strong> ${app.escapeHtml(sug.communityVerdict || (communityDenied ? 'COMMUNITY DENIED' : 'COMMUNITY APPROVED'))}<br><span>Upvotes: ${up} | Downvotes: ${down}</span><br><span class="meta-text">A decisive result requires at least 5 votes and 60% for one side.</span></div>` : ''}
             `;
 
         if (isEdited) {
           html += `<table class="history-table" id="hist-${sug.id}"><tr><th>Timestamp</th><th>Old Title</th><th>Old Body</th><th>Old Tags</th></tr>`;
           [...sug.editHistory].reverse().forEach(edit => {
-            html += `<tr><td>${app.escapeHtml(new Date(edit.editedAt).toLocaleString())}</td><td>${app.escapeHtml(edit.title)}</td><td>${app.escapeHtml(edit.body)}</td><td>${app.escapeHtml(app.tagsFor(edit).join(', '))}</td></tr>`;
+            html += `<tr><td>${app.escapeHtml(new Date(edit.editedAt).toLocaleString())}</td><td>${app.escapeHtml(edit.title)}</td><td>${app.linkify(edit.body)}</td><td>${app.escapeHtml(app.tagsFor(edit).join(', '))}</td></tr>`;
           });
           html += `</table>`;
         }
@@ -1994,7 +2060,7 @@
         }
         if (context === 'vote' || context === 'thread') {
           const comments = Array.isArray(sug.comments) ? sug.comments : [];
-          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div class="comment-card ${app.isAdminAccount(comment.accountKey || comment.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(comment.accountKey || comment.authorMc || '')}" data-read-kind="comment" data-read-suggestion="${sug.id}" data-read-comment="${index}" style="${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong>${app.adminLabel(comment.accountKey || comment.authorMc)}<span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.escapeHtml(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}${sug.status === 'active' ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div>` : '<p class="meta-text">Comments are closed.</p>'}</div>`;
+          html += `<div style="margin-top:12px;border-top:1px solid #aaa;padding-top:8px;"><strong>Comments (${comments.length})</strong><div id="comments-${sug.id}" style="margin-top:6px;">${comments.length ? comments.map((comment, index) => `<div class="comment-card ${app.isAdminAccount(comment.accountKey || comment.authorMc) ? 'admin' : 'member'}-surface" data-role-account="${app.escapeHtml(comment.accountKey || comment.authorMc || '')}" data-read-kind="comment" data-read-suggestion="${sug.id}" data-read-comment="${index}" style="${index >= 2 ? 'display:none;' : ''}"${index >= 2 ? ' data-extra-comment="true"' : ''}><strong>${app.escapeHtml(comment.authorMc || comment.authorDiscord || 'Member')}</strong>${app.adminLabel(comment.accountKey || comment.authorMc)}<span class="meta-text"> — ${app.escapeHtml(new Date(comment.createdAt).toLocaleString())}</span><div>${app.linkify(comment.body)}</div></div>`).join('') : '<div class="meta-text">No comments yet.</div>'}</div>${comments.length > 2 ? `<div style="margin-top:6px;"><button id="comments-toggle-${sug.id}" onclick="app.toggleComments('${sug.id}')">Show all ${comments.length} comments</button></div>` : ''}${sug.status === 'active' ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input id="comment-input-${sug.id}" type="text" maxlength="500" placeholder="Add a comment (500 characters max)" style="flex:1;"><button onclick="app.submitComment('${sug.id}')">Comment</button></div>` : '<p class="meta-text">Comments are closed.</p>'}</div>`;
         }
 
         if (context === 'admin' && app.userData?.isAdmin && sug.status === 'passed' && !finalized) {
@@ -2010,12 +2076,12 @@
             if (note.authorKey === myKey) {
               return;
             }
-            html += `<div style="border:1px solid #aaa;padding:7px;margin:6px 0;background:#fafafa;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.escapeHtml(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`;
+            html += `<div style="border:1px solid #aaa;padding:7px;margin:6px 0;background:#fafafa;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.linkify(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`;
           });
           html += `<label for="mod-note-${sug.id}" style="display:block;font-weight:bold;margin-top:8px;">${myNote ? 'Edit your note' : 'Write your note'} (2,000 characters max)</label><textarea id="mod-note-${sug.id}" maxlength="2000" style="width:100%;min-height:80px;margin-top:4px;">${app.escapeHtml(myNote?.body || '')}</textarea><div style="margin-top:6px;"><button onclick="app.saveModeratorNote('${sug.id}')">Save My Note</button></div></div></div>`;
         }
 
-        if (context === 'home') {
+        if (context === 'thread') {
           if (communityDenied) {
             html += `<div style="margin-top:8px;font-weight:bold;color:var(--aa-red);">Final outcome: Community Denied</div>`;
           } else if (finalized) {
@@ -2023,7 +2089,7 @@
             if (notes.length) {
               html += `<div style="margin-top:10px;"><strong>Published moderator notes</strong>`;
               notes.forEach(note => { 
-                html += `<div style="border-left:3px solid var(--aa-navy);padding:6px 8px;margin-top:6px;background:#f8f8f8;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.escapeHtml(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`; 
+                html += `<div style="border-left:3px solid var(--aa-navy);padding:6px 8px;margin-top:6px;background:#f8f8f8;"><strong>${app.escapeHtml(note.authorDiscord || 'Moderator')}</strong><div style="white-space:pre-wrap;margin-top:4px;">${app.linkify(note.body)}</div><div class="meta-text">${note.updatedAt && note.updatedAt !== note.createdAt ? 'Edited ' + app.escapeHtml(new Date(note.updatedAt).toLocaleString()) : 'Posted ' + app.escapeHtml(new Date(note.createdAt).toLocaleString())}</div></div>`;
               });
               html += `</div>`;
             }
@@ -2213,6 +2279,27 @@
           console.error('Veto failed:', error);
           app.msg('Error', 'Could not veto this suggestion.');
         }
+      },
+
+      linkify: (value) => {
+        const text = String(value || '');
+        let output = '', offset = 0;
+        for (const match of text.matchAll(/(?:https?:\/\/|www\.)[^\s<>"']+/gi)) {
+          output += app.escapeHtml(text.slice(offset, match.index));
+          let candidate = match[0];
+          let trailing = '';
+          while (/[.,!?;:]$/.test(candidate) || (candidate.endsWith(')') && (candidate.match(/\)/g) || []).length > (candidate.match(/\(/g) || []).length)) {
+            trailing = candidate.slice(-1) + trailing;
+            candidate = candidate.slice(0, -1);
+          }
+          try {
+            const url = new URL(/^www\./i.test(candidate) ? 'https://' + candidate : candidate);
+            if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) throw new Error('Invalid URL');
+            output += `<a href="${app.escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">${app.escapeHtml(candidate)}</a>` + app.escapeHtml(trailing);
+          } catch { output += app.escapeHtml(match[0]); }
+          offset = match.index + match[0].length;
+        }
+        return output + app.escapeHtml(text.slice(offset));
       },
 
       escapeHtml: (value) => (value || '').toString()
